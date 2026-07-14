@@ -210,7 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 statusText.innerText = "Extracting data from Thunderbit...";
                 
                 // Fetch points to the same file (index.php)
-                const response = await fetch('index.php', {
+                const response = await fetch('/index.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: urlInput })

@@ -1,6 +1,6 @@
 <?php
 // =========================================================================
-// 1. BACKEND: Handle /distill API Request
+// 1. BACKEND: Handle Oxylabs API Request
 // =========================================================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
@@ -10,28 +10,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $targetUrl = $requestData['url'] ?? '';
 
     if (empty($targetUrl)) {
-        echo json_encode(["success" => false, "error" => "Oops! Product URL is missing."]);
+        echo json_encode(["success" => false, "error" => "Product URL is missing."]);
         exit;
     }
 
-    // Yahan apna asli secret key daalein
-    $apiKey = "tb-your secret"; 
-    $apiUrl = "https://openapi.thunderbit.com/openapi/v1/distill";
+    // Oxylabs Payload Configuration for E-commerce
+    $params = array(
+        'source' => 'universal_ecommerce',
+        'url' => $targetUrl,
+        'parse' => true,
+    );
 
-    $payload = [
-        "url" => $targetUrl
-    ];
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, "https://realtime.oxylabs.io/v1/queries");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
+    curl_setopt($ch, CURLOPT_POST, 1);
+    
+    // Using your provided Oxylabs credentials
+    curl_setopt($ch, CURLOPT_USERPWD, "spadexnaitik_k77Ay:Naitikff+123");
+    
+    $headers = array("Content-Type: application/json");
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-    $ch = curl_init($apiUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "Authorization: Bearer " . $apiKey,
-        "Content-Type: application/json"
-    ]);
-
-    $response = curl_exec($ch);
+    $result = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     
     if (curl_errno($ch)) {
@@ -40,11 +42,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($httpCode !== 200) {
             echo json_encode([
                 "success" => false,
-                "error" => "Thunderbit API failed with status code: " . $httpCode,
-                "details" => json_decode($response, true)
+                "error" => "Oxylabs API failed with status code: " . $httpCode,
+                "details" => json_decode($result, true)
             ]);
         } else {
-            echo $response;
+            // Forward the raw Oxylabs response directly to the frontend
+            echo $result;
         }
     }
     
@@ -58,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thunderbit Distill Output</title>
+    <title>Oxylabs Flipkart Extractor</title>
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -98,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         button {
             padding: 14px;
-            background-color: #8b5cf6;
+            background-color: #2563eb;
             color: white;
             border: none;
             border-radius: 10px;
@@ -106,13 +109,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 600;
             cursor: pointer;
         }
-        button:hover { background-color: #7c3aed; }
+        button:hover { background-color: #1d4ed8; }
 
         #loading-state { display: none; flex-direction: column; align-items: center; padding: 20px 0; }
         .spinner {
             width: 40px; height: 40px;
             border: 4px solid #f1f5f9;
-            border-left-color: #8b5cf6;
+            border-left-color: #2563eb;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -121,9 +124,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .result-wrapper {
             display: none;
             width: 100%;
-            max-width: 800px;
+            max-width: 600px;
             margin-top: 25px;
-            display: flex;
             flex-direction: column;
             gap: 20px;
         }
@@ -136,37 +138,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             text-align: left;
         }
 
-        .meta-title { font-size: 20px; color: #0f172a; font-weight: 700; margin: 0 0 8px 0; }
-        .meta-desc { font-size: 14px; color: #64748b; margin: 0 0 15px 0; line-height: 1.5; }
-        .meta-url { font-size: 12px; color: #3b82f6; word-break: break-all; }
-
-        .screenshot-container { display: none; margin-top: 15px; }
-        .screenshot-container img { max-width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; }
-
-        .markdown-card {
-            background: #1e293b;
-            padding: 25px;
-            border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            text-align: left;
-        }
+        .meta-title { font-size: 20px; color: #0f172a; font-weight: 700; margin: 0 0 10px 0; }
+        .meta-price { font-size: 22px; color: #16a34a; font-weight: bold; margin: 0 0 15px 0; }
         
-        .markdown-header { color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 10px; }
-
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            font-family: monospace;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #f8fafc;
-            margin: 0;
-        }
+        .screenshot-container { margin-top: 15px; }
+        .screenshot-container img { max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #e2e8f0; }
 
         .error-box {
             display: none;
             width: 100%;
-            max-width: 800px;
+            max-width: 600px;
             background: #fef2f2;
             border: 1px solid #fecaca;
             color: #dc2626;
@@ -184,17 +165,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 
     <div class="main-card">
-        <h2>Web Page Distiller</h2>
-        <p class="sub">URL paste kijiye aur clean Markdown data extract kijiye.</p>
+        <h2>Oxylabs Product Scraper</h2>
+        <p class="sub">Extract details directly from Flipkart URLs.</p>
         
         <div id="input-state" class="input-box">
-            <input type="url" id="product-url" placeholder="https://example.com" required>
-            <button onclick="runDistill()">Extract Data</button>
+            <input type="url" id="product-url" placeholder="https://www.flipkart.com/..." required>
+            <button onclick="runExtraction()">Extract Data</button>
         </div>
 
         <div id="loading-state">
             <div class="spinner"></div>
-            <div id="live-status" class="status-text">Fetching data from Thunderbit...</div>
+            <div id="live-status" class="status-text">Routing via Oxylabs Proxies...</div>
         </div>
     </div>
 
@@ -202,38 +183,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div id="result-wrapper" class="result-wrapper hidden">
         <div class="meta-card">
-            <h3 id="res-title" class="meta-title">Page Title</h3>
-            <p id="res-desc" class="meta-desc">Page description...</p>
-            <a id="res-url" href="#" target="_blank" class="meta-url">Source URL</a>
+            <h3 id="res-title" class="meta-title">Product Name</h3>
+            <div id="res-price" class="meta-price">₹0.00</div>
             
-            <div id="res-screenshot-container" class="screenshot-container">
-                <img id="res-screenshot" src="" alt="Screenshot">
+            <div class="screenshot-container">
+                <img id="res-image" src="" alt="Product Image" style="display: none;">
             </div>
-        </div>
-
-        <div class="markdown-card">
-            <div class="markdown-header">Extracted Markdown</div>
-            <pre id="res-markdown"></pre>
         </div>
     </div>
 
     <script>
-        // =========================================================================
-        // CHROMOME PASTE VALA AUTO RUN LOGIC
-        // =========================================================================
+        // Auto-run logic for Chrome URL pasting
         window.onload = function() {
             const currentHref = window.location.href;
-            // Agar URL me '?url=' present hai toh extraction auto start hoga
             if (currentHref.includes('?url=')) {
                 const extractedParam = currentHref.split('?url=')[1];
                 if (extractedParam) {
                     document.getElementById('product-url').value = decodeURIComponent(extractedParam);
-                    runDistill();
+                    runExtraction();
                 }
             }
         };
 
-        async function runDistill() {
+        async function runExtraction() {
             const urlInput = document.getElementById('product-url').value.trim();
             const inputState = document.getElementById('input-state');
             const loadingState = document.getElementById('loading-state');
@@ -242,13 +214,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (!urlInput) return;
 
+            // UI Reset
             errorOutput.style.display = 'none';
             resultWrapper.classList.add('hidden');
             inputState.style.display = 'none';
             loadingState.style.display = 'flex';
+            document.getElementById('res-image').style.display = 'none';
 
             try {
-                // Hitting the Railway self endpoint safely
                 const targetEndpoint = window.location.origin + window.location.pathname;
                 const response = await fetch(targetEndpoint, {
                     method: 'POST',
@@ -258,6 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 const rawText = await response.text();
                 let result;
+                
                 try {
                     result = JSON.parse(rawText);
                 } catch(e) {
@@ -265,30 +239,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if (result.error || result.success === false) {
-                    throw new Error(result.error || "API tracking failure.");
+                    throw new Error(result.error || "Oxylabs tracking failure.");
                 }
 
-                const distillData = result.data || {};
-                const meta = distillData.metadata || {};
+                // Oxylabs returns data in an array called "results"
+                const content = result.results?.[0]?.content || {};
 
-                document.getElementById('res-title').innerText = meta.title || "No Title Found";
-                document.getElementById('res-desc').innerText = meta.description || "No description available.";
-                document.getElementById('res-url').href = meta.sourceURL || urlInput;
-                document.getElementById('res-url').innerText = meta.sourceURL || urlInput;
+                // Map Content to the UI
+                document.getElementById('res-title').innerText = content.title || "Title Not Found";
+                
+                // Formatting price if it exists
+                let priceText = "Price Not Found";
+                if (content.price) {
+                    priceText = (content.currency || "") + " " + content.price;
+                }
+                document.getElementById('res-price').innerText = priceText;
 
-                const screenshotContainer = document.getElementById('res-screenshot-container');
-                if (distillData.screenshot) {
-                    document.getElementById('res-screenshot').src = distillData.screenshot;
-                    screenshotContainer.style.display = 'block';
-                } else {
-                    screenshotContainer.style.display = 'none';
+                // Handle Image
+                const imgElement = document.getElementById('res-image');
+                if (content.images && content.images.length > 0) {
+                    imgElement.src = content.images[0];
+                    imgElement.style.display = 'block';
                 }
 
-                document.getElementById('res-markdown').innerText = distillData.markdown || "Empty markdown returned.";
                 resultWrapper.classList.remove('hidden');
 
             } catch (err) {
-                errorOutput.innerText = "Distill Failed!\n\n" + err.message;
+                errorOutput.innerText = "Extraction Failed!\n\n" + err.message;
                 errorOutput.style.display = 'block';
             } finally {
                 loadingState.style.display = 'none';

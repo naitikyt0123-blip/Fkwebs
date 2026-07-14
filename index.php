@@ -44,7 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 "details" => json_decode($response, true)
             ]);
         } else {
-            // Thunderbit ka direct success response (jo aapne share kiya) aage pass kar rahe hain
             echo $response;
         }
     }
@@ -75,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: white;
             padding: 35px;
             border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 600px;
             text-align: center;
@@ -93,9 +92,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 10px;
             font-size: 15px;
             outline: none;
-            transition: border-color 0.2s;
+            width: 100%;
+            box-sizing: border-box;
         }
-        input[type="url"]:focus { border-color: #3b82f6; }
 
         button {
             padding: 14px;
@@ -106,7 +105,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
         }
         button:hover { background-color: #7c3aed; }
 
@@ -120,7 +118,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         .status-text { margin-top: 15px; color: #475569; font-weight: 500; font-size: 15px; }
 
-        /* Structured Result Containers */
         .result-wrapper {
             display: none;
             width: 100%;
@@ -141,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .meta-title { font-size: 20px; color: #0f172a; font-weight: 700; margin: 0 0 8px 0; }
         .meta-desc { font-size: 14px; color: #64748b; margin: 0 0 15px 0; line-height: 1.5; }
-        .meta-url { font-size: 12px; color: #3b82f6; word-break: break-all; text-decoration: none; }
+        .meta-url { font-size: 12px; color: #3b82f6; word-break: break-all; }
 
         .screenshot-container { display: none; margin-top: 15px; }
         .screenshot-container img { max-width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; }
@@ -154,18 +151,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             text-align: left;
         }
         
-        .markdown-header { color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; }
+        .markdown-header { color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 10px; }
 
         pre {
             white-space: pre-wrap;
             word-wrap: break-word;
-            font-family: 'Consolas', 'Courier New', monospace;
+            font-family: monospace;
             font-size: 14px;
             line-height: 1.6;
             color: #f8fafc;
             margin: 0;
-            max-height: 500px;
-            overflow-y: auto;
         }
 
         .error-box {
@@ -179,13 +174,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             padding: 20px;
             border-radius: 12px;
             text-align: left;
-            font-size: 14px;
             white-space: pre-wrap;
         }
 
         @keyframes spin { 100% { transform: rotate(360deg); } }
-        
-        /* Utility class to hide element */
         .hidden { display: none !important; }
     </style>
 </head>
@@ -196,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p class="sub">URL paste kijiye aur clean Markdown data extract kijiye.</p>
         
         <div id="input-state" class="input-box">
-            <input type="url" id="product-url" placeholder="https://example.com/article" required>
+            <input type="url" id="product-url" placeholder="https://example.com" required>
             <button onclick="runDistill()">Extract Data</button>
         </div>
 
@@ -209,15 +201,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div id="error-output" class="error-box"></div>
 
     <div id="result-wrapper" class="result-wrapper hidden">
-        
         <div class="meta-card">
             <h3 id="res-title" class="meta-title">Page Title</h3>
-            <p id="res-desc" class="meta-desc">Page description will appear here...</p>
+            <p id="res-desc" class="meta-desc">Page description...</p>
             <a id="res-url" href="#" target="_blank" class="meta-url">Source URL</a>
             
             <div id="res-screenshot-container" class="screenshot-container">
-                <p style="font-size: 12px; color: #64748b; margin-bottom: 5px;">Screenshot:</p>
-                <img id="res-screenshot" src="" alt="Page Screenshot">
+                <img id="res-screenshot" src="" alt="Screenshot">
             </div>
         </div>
 
@@ -225,10 +215,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="markdown-header">Extracted Markdown</div>
             <pre id="res-markdown"></pre>
         </div>
-        
     </div>
 
     <script>
+        // =========================================================================
+        // CHROMOME PASTE VALA AUTO RUN LOGIC
+        // =========================================================================
+        window.onload = function() {
+            const currentHref = window.location.href;
+            // Agar URL me '?url=' present hai toh extraction auto start hoga
+            if (currentHref.includes('?url=')) {
+                const extractedParam = currentHref.split('?url=')[1];
+                if (extractedParam) {
+                    document.getElementById('product-url').value = decodeURIComponent(extractedParam);
+                    runDistill();
+                }
+            }
+        };
+
         async function runDistill() {
             const urlInput = document.getElementById('product-url').value.trim();
             const inputState = document.getElementById('input-state');
@@ -236,19 +240,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const errorOutput = document.getElementById('error-output');
             const resultWrapper = document.getElementById('result-wrapper');
 
-            if (!urlInput) {
-                alert("Please enter a valid URL!");
-                return;
-            }
+            if (!urlInput) return;
 
-            // Reset UI
             errorOutput.style.display = 'none';
             resultWrapper.classList.add('hidden');
             inputState.style.display = 'none';
             loadingState.style.display = 'flex';
 
             try {
-                const response = await fetch(window.location.href, {
+                // Hitting the Railway self endpoint safely
+                const targetEndpoint = window.location.origin + window.location.pathname;
+                const response = await fetch(targetEndpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: urlInput })
@@ -256,45 +258,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 const rawText = await response.text();
                 let result;
-                
                 try {
                     result = JSON.parse(rawText);
                 } catch(e) {
-                    throw new Error("Invalid response format. Raw Text: \n" + rawText);
+                    throw new Error("Response is not valid JSON. Raw output:\n" + rawText);
                 }
 
-                // Check for backend PHP errors or API errors
                 if (result.error || result.success === false) {
-                    let detailedMsg = result.error || "Unknown error occurred.";
-                    if(result.details) detailedMsg += "\nDetails: " + JSON.stringify(result.details, null, 2);
-                    throw new Error(detailedMsg);
+                    throw new Error(result.error || "API tracking failure.");
                 }
 
-                // Extract data based on the specific JSON schema provided
                 const distillData = result.data || {};
                 const meta = distillData.metadata || {};
 
-                // Map Metadata
                 document.getElementById('res-title').innerText = meta.title || "No Title Found";
                 document.getElementById('res-desc').innerText = meta.description || "No description available.";
-                
-                const urlElem = document.getElementById('res-url');
-                urlElem.innerText = meta.sourceURL || urlInput;
-                urlElem.href = meta.sourceURL || urlInput;
+                document.getElementById('res-url').href = meta.sourceURL || urlInput;
+                document.getElementById('res-url').innerText = meta.sourceURL || urlInput;
 
-                // Map Screenshot
                 const screenshotContainer = document.getElementById('res-screenshot-container');
-                if (distillData.screenshot && distillData.screenshot.trim() !== "") {
+                if (distillData.screenshot) {
                     document.getElementById('res-screenshot').src = distillData.screenshot;
                     screenshotContainer.style.display = 'block';
                 } else {
                     screenshotContainer.style.display = 'none';
                 }
 
-                // Map Markdown Content
-                document.getElementById('res-markdown').innerText = distillData.markdown || "No content extracted.";
-
-                // Show Results
+                document.getElementById('res-markdown').innerText = distillData.markdown || "Empty markdown returned.";
                 resultWrapper.classList.remove('hidden');
 
             } catch (err) {

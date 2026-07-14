@@ -17,78 +17,56 @@ if (empty($targetUrl)) {
     exit;
 }
 
-$params = array(
-    'source' => 'universal_ecommerce',
-    'url' => $targetUrl,
-    'parse' => true,
-);
+// 1. Extract the Flipkart Product ID (PID) directly from the URL
+$pid = "";
+if (preg_match('/pid=([a-zA-Z0-9]+)/', $targetUrl, $matches)) {
+    $pid = $matches[1];
+}
+
+if (empty($pid)) {
+    echo json_encode(["success" => false, "error" => "Could not find the Product ID (pid) in the Flipkart URL."]);
+    exit;
+}
+
+// 2. Hit Buyhatke's Hidden API directly using the extracted PID
+$buyhatkeApiUrl = "https://buyhatke.com/api/productData?pos=2&pid=" . $pid;
 
 $ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, "https://realtime.oxylabs.io/v1/queries");
+curl_setopt($ch, CURLOPT_URL, $buyhatkeApiUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
-curl_setopt($ch, CURLOPT_POST, 1);
-curl_setopt($ch, CURLOPT_TIMEOUT, 120);
-curl_setopt($ch, CURLOPT_USERPWD, "spadexnaitik_k77Ay:Naitikff+123");
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+// Add headers so Buyhatke thinks we are a normal browser
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    'Accept: application/json',
+    'Referer: https://buyhatke.com/',
+    'Origin: https://buyhatke.com'
+]);
 
-$headers = array("Content-Type: application/json");
-curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-$result = curl_exec($ch);
+$response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
-if ($result === false) {
-    echo json_encode(["success" => false, "error" => "Network error."]);
+if ($response === false || $httpCode !== 200) {
+    echo json_encode(["success" => false, "error" => "Failed to connect to Buyhatke API. Status: " . $httpCode]);
     exit;
 }
 
-if ($httpCode !== 200) {
-    echo json_encode([
-        "success" => false,
-        "error" => "Oxylabs API status code: " . $httpCode
-    ]);
-    exit;
-}
+// 3. Parse Buyhatke's JSON response
+$data = json_decode($response, true);
 
-$oxylabsData = json_decode($result, true);
+// Note: Because I cannot see the EXACT structure of Buyhatke's JSON from the screenshot, 
+// I am dumping the raw data to the frontend if it succeeds, so we can map it perfectly next.
+// For now, let's try to guess their standard keys or send the raw array to inspect.
 
-if (isset($oxylabsData['results'][0]['content'])) {
-    $content = $oxylabsData['results'][0]['content'];
-    
-    $title = $content['title'] ?? "Title not found";
-    $currency = $content['currency'] ?? "₹";
-    
-    $price = isset($content['price']) ? $currency . " " . $content['price'] : "Price not found";
-    
-    $originalPrice = "MRP not available";
-    if (isset($content['mrp'])) {
-        $originalPrice = $currency . " " . $content['mrp'];
-    } elseif (isset($content['original_price'])) {
-        $originalPrice = $currency . " " . $content['original_price'];
-    }
-    
-    // Yahan maine logic change kiya hai. Ab ye pura array bhejega.
-    $imagesArray = [];
-    if (isset($content['images']) && is_array($content['images'])) {
-        $imagesArray = $content['images'];
-    } elseif (isset($content['image'])) {
-        $imagesArray = is_array($content['image']) ? $content['image'] : [$content['image']];
-    } elseif (isset($content['main_image'])) {
-        $imagesArray = [$content['main_image']];
-    }
-    
+if ($data) {
     echo json_encode([
         "success" => true,
-        "data" => [
-            "title" => trim($title),
-            "price" => trim($price),
-            "original_price" => trim($originalPrice),
-            "images" => $imagesArray // array bhej raha hoon
-        ]
+        "buyhatke_raw_data" => $data // Sending the raw data to see where the images are hidden!
     ]);
 } else {
-    echo json_encode(["success" => false, "error" => "Parsing failed."]);
+    echo json_encode(["success" => false, "error" => "Buyhatke returned empty or invalid JSON."]);
 }
 exit;
 ?>

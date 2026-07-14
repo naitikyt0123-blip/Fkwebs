@@ -7,7 +7,7 @@ if (strlen($uid) < 5) {
     exit;
 }
 
-$api = "https://ffuid2info.up.railway.app/api/check?uid=" . urlencode($uid);
+$api = "https://f-fuid2-info.vercel.app/api/check?uid=" . urlencode($uid);
 
 if (function_exists('curl_init')) {
     $ch = curl_init($api);

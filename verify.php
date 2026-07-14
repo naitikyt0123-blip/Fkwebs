@@ -59,10 +59,8 @@ if (isset($oxylabsData['results'][0]['content'])) {
     $title = $content['title'] ?? "Title not found";
     $currency = $content['currency'] ?? "₹";
     
-    // 1. Selling Price (Offer Price)
     $price = isset($content['price']) ? $currency . " " . $content['price'] : "Price not found";
     
-    // 2. Original Price (MRP) Extraction
     $originalPrice = "MRP not available";
     if (isset($content['mrp'])) {
         $originalPrice = $currency . " " . $content['mrp'];
@@ -70,14 +68,14 @@ if (isset($oxylabsData['results'][0]['content'])) {
         $originalPrice = $currency . " " . $content['original_price'];
     }
     
-    // 3. Image Extraction with multiple fallback keys
-    $image = "";
-    if (isset($content['images']) && is_array($content['images']) && count($content['images']) > 0) {
-        $image = $content['images'][0];
+    // Yahan maine logic change kiya hai. Ab ye pura array bhejega.
+    $imagesArray = [];
+    if (isset($content['images']) && is_array($content['images'])) {
+        $imagesArray = $content['images'];
     } elseif (isset($content['image'])) {
-        $image = is_array($content['image']) ? $content['image'][0] : $content['image'];
+        $imagesArray = is_array($content['image']) ? $content['image'] : [$content['image']];
     } elseif (isset($content['main_image'])) {
-        $image = $content['main_image'];
+        $imagesArray = [$content['main_image']];
     }
     
     echo json_encode([
@@ -86,7 +84,7 @@ if (isset($oxylabsData['results'][0]['content'])) {
             "title" => trim($title),
             "price" => trim($price),
             "original_price" => trim($originalPrice),
-            "image" => $image
+            "images" => $imagesArray // array bhej raha hoon
         ]
     ]);
 } else {

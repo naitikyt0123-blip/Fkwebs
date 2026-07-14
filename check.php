@@ -1,42 +1,48 @@
 <?php
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
-$uid = preg_replace('/[^0-9]/', '', $_GET['uid'] ?? '');
-if (strlen($uid) < 5) {
-    echo json_encode(["Success" => false, "message" => "Invalid UID"]);
+$uid = trim($_GET['uid'] ?? '');
+$uid = preg_replace('/\D/', '', $uid);
+
+if (empty($uid)) {
+    echo json_encode([
+        "success" => false,
+        "message" => "Invalid UID"
+    ]);
     exit;
 }
 
 $api = "https://f-fuid2-info.vercel.app/api/check?uid=" . urlencode($uid);
 
-if (function_exists('curl_init')) {
-    $ch = curl_init($api);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 20,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_SSL_VERIFYHOST => false,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_USERAGENT      => 'Mozilla/5.0',
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => $api,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_FOLLOWLOCATION => true,
+    CURLOPT_CONNECTTIMEOUT => 15,
+    CURLOPT_TIMEOUT => 30,
+    CURLOPT_SSL_VERIFYPEER => false,
+    CURLOPT_SSL_VERIFYHOST => false,
+    CURLOPT_HTTPHEADER => [
+        "Accept: application/json",
+        "User-Agent: Mozilla/5.0"
+    ]
+]);
+
+$response = curl_exec($ch);
+
+if (curl_errno($ch)) {
+    echo json_encode([
+        "Success" => false,
+        "message" => curl_error($ch)
     ]);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
-    if ($response === false || $httpCode >= 400) {
-        echo json_encode(["success" => false, "message" => "API unreachable"]);
-        exit;
-    }
-    echo $response;
-} else {
-    $ctx = stream_context_create([
-        'http' => ['timeout' => 20, 'header' => "User-Agent: Mozilla/5.0\r\n"],
-        'ssl'  => ['verify_peer' => false, 'verify_peer_name' => false]
-    ]);
-    $response = @file_get_contents($api, false, $ctx);
-    if ($response === false) {
-        echo json_encode(["success" => false, "message" => "API unreachable"]);
-        exit;
-    }
-    echo $response;
+    exit;
 }
-?>
+
+$http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+
+http_response_code($http ?: 200);
+
+echo $response;

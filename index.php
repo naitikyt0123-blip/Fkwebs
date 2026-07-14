@@ -1,79 +1,21 @@
-<?php
-// =========================================================================
-// 1. BACKEND: Handle Oxylabs API Request
-// =========================================================================
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    header('Content-Type: application/json');
-    
-    $input = file_get_contents('php://input');
-    $requestData = json_decode($input, true);
-    $targetUrl = $requestData['url'] ?? '';
-
-    if (empty($targetUrl)) {
-        echo json_encode(["success" => false, "error" => "Product URL is missing."]);
-        exit;
-    }
-
-    // Oxylabs Payload Configuration for E-commerce
-    $params = array(
-        'source' => 'universal_ecommerce',
-        'url' => $targetUrl,
-        'parse' => true,
-    );
-
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, "https://realtime.oxylabs.io/v1/queries");
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
-    curl_setopt($ch, CURLOPT_POST, 1);
-    
-    // Using your provided Oxylabs credentials
-    curl_setopt($ch, CURLOPT_USERPWD, "spadexnaitik_k77Ay:Naitikff+123");
-    
-    $headers = array("Content-Type: application/json");
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-    $result = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    
-    if (curl_errno($ch)) {
-        echo json_encode(["success" => false, "error" => "CURL Error: " . curl_error($ch)]);
-    } else {
-        if ($httpCode !== 200) {
-            echo json_encode([
-                "success" => false,
-                "error" => "Oxylabs API failed with status code: " . $httpCode,
-                "details" => json_decode($result, true)
-            ]);
-        } else {
-            // Forward the raw Oxylabs response directly to the frontend
-            echo $result;
-        }
-    }
-    
-    curl_close($ch);
-    exit;
-}
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oxylabs Flipkart Extractor</title>
+    <title>Flipkart Product Extractor</title>
     <style>
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             background-color: #f8fafc;
             margin: 0;
-            padding: 30px 15px;
+            padding: 40px 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         
-        .main-card {
+        .card {
             background: white;
             padding: 35px;
             border-radius: 16px;
@@ -82,22 +24,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             max-width: 600px;
             text-align: center;
             box-sizing: border-box;
+            margin-bottom: 20px;
         }
 
-        h2 { margin: 0 0 10px 0; color: #1e293b; font-size: 24px; }
-        p.sub { color: #64748b; font-size: 14px; margin-bottom: 25px; }
+        h2 { margin: 0 0 10px 0; color: #1e293b; }
+        p.subtitle { color: #64748b; font-size: 14px; margin-bottom: 25px; }
 
-        .input-box { display: flex; flex-direction: column; gap: 12px; }
+        .input-group { display: flex; flex-direction: column; gap: 12px; }
 
         input[type="url"] {
-            padding: 14px 16px;
+            padding: 14px;
             border: 2px solid #e2e8f0;
             border-radius: 10px;
             font-size: 15px;
             outline: none;
-            width: 100%;
-            box-sizing: border-box;
+            transition: border-color 0.2s;
         }
+        
+        input[type="url"]:focus { border-color: #3b82f6; }
 
         button {
             padding: 14px;
@@ -108,10 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
+            transition: background-color 0.2s;
         }
+        
         button:hover { background-color: #1d4ed8; }
 
-        #loading-state { display: none; flex-direction: column; align-items: center; padding: 20px 0; }
+        #loading-ui { display: none; flex-direction: column; align-items: center; padding: 20px 0; }
         .spinner {
             width: 40px; height: 40px;
             border: 4px solid #f1f5f9;
@@ -121,109 +67,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         .status-text { margin-top: 15px; color: #475569; font-weight: 500; font-size: 15px; }
 
-        .result-wrapper {
+        .result-card {
             display: none;
-            width: 100%;
-            max-width: 600px;
-            margin-top: 25px;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .meta-card {
-            background: white;
-            padding: 25px;
-            border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             text-align: left;
         }
 
-        .meta-title { font-size: 20px; color: #0f172a; font-weight: 700; margin: 0 0 10px 0; }
-        .meta-price { font-size: 22px; color: #16a34a; font-weight: bold; margin: 0 0 15px 0; }
+        .product-title { font-size: 20px; color: #0f172a; font-weight: 700; margin: 0 0 10px 0; }
+        .product-price { font-size: 24px; color: #16a34a; font-weight: bold; margin: 0 0 20px 0; }
         
-        .screenshot-container { margin-top: 15px; }
-        .screenshot-container img { max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #e2e8f0; }
-
-        .error-box {
+        .product-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
             display: none;
-            width: 100%;
-            max-width: 600px;
+        }
+
+        .error-card {
+            display: none;
             background: #fef2f2;
             border: 1px solid #fecaca;
             color: #dc2626;
-            margin-top: 25px;
             padding: 20px;
             border-radius: 12px;
             text-align: left;
             white-space: pre-wrap;
+            font-size: 14px;
         }
 
         @keyframes spin { 100% { transform: rotate(360deg); } }
-        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="main-card">
-        <h2>Oxylabs Product Scraper</h2>
-        <p class="sub">Extract details directly from Flipkart URLs.</p>
+    <div class="card" id="form-card">
+        <h2>Flipkart Extractor</h2>
+        <p class="subtitle">Enter a product URL to retrieve data securely.</p>
         
-        <div id="input-state" class="input-box">
+        <div class="input-group">
             <input type="url" id="product-url" placeholder="https://www.flipkart.com/..." required>
-            <button onclick="runExtraction()">Extract Data</button>
-        </div>
-
-        <div id="loading-state">
-            <div class="spinner"></div>
-            <div id="live-status" class="status-text">Routing via Oxylabs Proxies...</div>
+            <button onclick="startExtraction()">Extract Information</button>
         </div>
     </div>
 
-    <div id="error-output" class="error-box"></div>
+    <div class="card" id="loading-ui">
+        <div class="spinner"></div>
+        <div class="status-text">Connecting to verify.php...</div>
+    </div>
 
-    <div id="result-wrapper" class="result-wrapper hidden">
-        <div class="meta-card">
-            <h3 id="res-title" class="meta-title">Product Name</h3>
-            <div id="res-price" class="meta-price">₹0.00</div>
-            
-            <div class="screenshot-container">
-                <img id="res-image" src="" alt="Product Image" style="display: none;">
-            </div>
-        </div>
+    <div class="card error-card" id="error-ui"></div>
+
+    <div class="card result-card" id="result-ui">
+        <h3 id="res-title" class="product-title">Product Name</h3>
+        <div id="res-price" class="product-price">₹0.00</div>
+        <img id="res-image" class="product-image" src="" alt="Product Output">
     </div>
 
     <script>
-        // Auto-run logic for Chrome URL pasting
+        // Check for URL parameters on page load to trigger automatic extraction
         window.onload = function() {
-            const currentHref = window.location.href;
-            if (currentHref.includes('?url=')) {
-                const extractedParam = currentHref.split('?url=')[1];
-                if (extractedParam) {
-                    document.getElementById('product-url').value = decodeURIComponent(extractedParam);
-                    runExtraction();
-                }
+            const urlParams = new URLSearchParams(window.location.search);
+            const autoUrl = urlParams.get('url');
+            
+            if (autoUrl) {
+                document.getElementById('product-url').value = autoUrl;
+                startExtraction();
             }
         };
 
-        async function runExtraction() {
+        async function startExtraction() {
             const urlInput = document.getElementById('product-url').value.trim();
-            const inputState = document.getElementById('input-state');
-            const loadingState = document.getElementById('loading-state');
-            const errorOutput = document.getElementById('error-output');
-            const resultWrapper = document.getElementById('result-wrapper');
+            const formCard = document.getElementById('form-card');
+            const loadingUI = document.getElementById('loading-ui');
+            const errorUI = document.getElementById('error-ui');
+            const resultUI = document.getElementById('result-ui');
 
-            if (!urlInput) return;
+            if (!urlInput) {
+                alert("Please enter a valid URL.");
+                return;
+            }
 
-            // UI Reset
-            errorOutput.style.display = 'none';
-            resultWrapper.classList.add('hidden');
-            inputState.style.display = 'none';
-            loadingState.style.display = 'flex';
+            // Reset UI states
+            errorUI.style.display = 'none';
+            resultUI.style.display = 'none';
+            formCard.style.display = 'none';
+            loadingUI.style.display = 'flex';
             document.getElementById('res-image').style.display = 'none';
 
             try {
-                const targetEndpoint = window.location.origin + window.location.pathname;
-                const response = await fetch(targetEndpoint, {
+                // Point the fetch request strictly to verify.php
+                const response = await fetch('verify.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: urlInput })
@@ -235,41 +168,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     result = JSON.parse(rawText);
                 } catch(e) {
-                    throw new Error("Response is not valid JSON. Raw output:\n" + rawText);
+                    throw new Error("Invalid server response format. \nRaw Output:\n" + rawText.substring(0, 200));
                 }
 
-                if (result.error || result.success === false) {
-                    throw new Error(result.error || "Oxylabs tracking failure.");
+                if (result.success === false) {
+                    throw new Error(result.error || "Failed to process the request.");
                 }
 
-                // Oxylabs returns data in an array called "results"
-                const content = result.results?.[0]?.content || {};
+                const data = result.data;
 
-                // Map Content to the UI
-                document.getElementById('res-title').innerText = content.title || "Title Not Found";
+                // Populate UI elements
+                document.getElementById('res-title').innerText = data.title || "Title unavailable";
+                document.getElementById('res-price').innerText = data.price || "Price unavailable";
                 
-                // Formatting price if it exists
-                let priceText = "Price Not Found";
-                if (content.price) {
-                    priceText = (content.currency || "") + " " + content.price;
-                }
-                document.getElementById('res-price').innerText = priceText;
-
-                // Handle Image
-                const imgElement = document.getElementById('res-image');
-                if (content.images && content.images.length > 0) {
-                    imgElement.src = content.images[0];
-                    imgElement.style.display = 'block';
+                if (data.image) {
+                    const img = document.getElementById('res-image');
+                    img.src = data.image;
+                    img.style.display = 'block';
                 }
 
-                resultWrapper.classList.remove('hidden');
+                // Show success container
+                resultUI.style.display = 'block';
 
             } catch (err) {
-                errorOutput.innerText = "Extraction Failed!\n\n" + err.message;
-                errorOutput.style.display = 'block';
+                errorUI.innerText = "Error Occurred:\n\n" + err.message;
+                errorUI.style.display = 'block';
             } finally {
-                loadingState.style.display = 'none';
-                inputState.style.display = 'flex';
+                // Always restore the input form
+                loadingUI.style.display = 'none';
+                formCard.style.display = 'block';
             }
         }
     </script>

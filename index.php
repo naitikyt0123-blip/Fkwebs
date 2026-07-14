@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flipkart Product Extractor</title>
+    <title>Flipkart Prooooduct Extractor</title>
     <style>
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -60,16 +60,24 @@
         .price-container { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
         .product-price { font-size: 26px; color: #16a34a; font-weight: bold; }
         .product-mrp { font-size: 16px; color: #94a3b8; text-decoration: line-through; }
-        .image-container { width: 100%; text-align: center; margin-top: 15px; }
-        .product-image {
-            max-width: 100%;
-            max-height: 350px;
-            height: auto;
+        
+        /* Naya Gallery Grid Layout */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .image-gallery img {
+            width: 100%;
+            height: 120px;
+            object-fit: contain;
             border-radius: 8px;
             border: 1px solid #e2e8f0;
-            display: none;
-            object-fit: contain;
+            padding: 5px;
+            box-sizing: border-box;
         }
+        
         .error-card {
             display: none;
             background: #fef2f2;
@@ -107,9 +115,7 @@
             <span id="res-price" class="product-price">₹0.00</span>
             <span id="res-mrp" class="product-mrp">₹0.00</span>
         </div>
-        <div class="image-container">
-            <img id="res-image" class="product-image" src="" alt="Product Output">
-        </div>
+        <div id="res-gallery" class="image-gallery"></div>
     </div>
 
     <script>
@@ -128,6 +134,7 @@
             const loadingUI = document.getElementById('loading-ui');
             const errorUI = document.getElementById('error-ui');
             const resultUI = document.getElementById('result-ui');
+            const gallery = document.getElementById('res-gallery');
 
             if (!urlInput) {
                 alert("Please enter a URL.");
@@ -138,7 +145,7 @@
             resultUI.style.display = 'none';
             formCard.style.display = 'none';
             loadingUI.style.display = 'flex';
-            document.getElementById('res-image').style.display = 'none';
+            gallery.innerHTML = ''; // Purani images clear kar do
 
             try {
                 const response = await fetch('verify.php', {
@@ -164,12 +171,15 @@
                 document.getElementById('res-price').innerText = data.price;
                 document.getElementById('res-mrp').innerText = data.original_price;
                 
-                const img = document.getElementById('res-image');
-                if (data.image && data.image.trim() !== "") {
-                    img.src = data.image;
-                    img.style.display = 'inline-block';
+                // Naya logic: Array ki saari images loop karke add karo
+                if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+                    data.images.forEach(imgUrl => {
+                        const imgElement = document.createElement('img');
+                        imgElement.src = imgUrl;
+                        gallery.appendChild(imgElement);
+                    });
                 } else {
-                    img.style.display = 'none';
+                    gallery.innerHTML = '<p style="color: #94a3b8; font-size: 14px;">No images found</p>';
                 }
 
                 resultUI.style.display = 'block';

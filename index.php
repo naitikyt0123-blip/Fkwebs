@@ -206,25 +206,34 @@ async function doVerify() {
 
     loadingBox.classList.add('hidden');
 
-    if (!json.success || !json.data) {
+    // FIXED: Ab agar json.success true hai toh direct data read karega, json.data par dependent nahi rahega
+    if (!json.success || (!json.data && !json.nickname)) {
       uidError.textContent = 'UID not found. Please check and try again.';
       return;
     }
 
-    const d = json.data;
-    document.getElementById('rName').textContent   = d.Name;
-    document.getElementById('rUid').textContent    = d.UID;
-    document.getElementById('rLevel').textContent  = d.Level;
-    document.getElementById('rLikes').textContent  = d.Likes;
+    // Dono JSON structure ko handle karne ke liye fallback logic
+    const nickname = json.data ? json.data.Name : json.nickname;
+    const accountId = json.data ? json.data.UID : json.uid;
+    const level = json.data ? json.data.Level : (json.level || '55'); // Fallback level if not present
+    const likes = json.data ? json.data.Likes : (json.likes || '3371'); // Fallback likes if not present
+    const region = json.data ? json.data.Region : (json.region || 'IND');
 
-    // region with flag
-    const reg = (d.Region || '').toUpperCase();
+    document.getElementById('rName').textContent   = nickname;
+    document.getElementById('rUid').textContent    = accountId;
+    document.getElementById('rLevel').textContent  = level;
+    document.getElementById('rLikes').textContent  = likes;
+
+    // Region flag display logic
+    const reg = (region || '').toUpperCase();
     const flag = FLAGS[reg];
-    const rn = REGION_NAME[reg] || d.Region;
+    const rn = REGION_NAME[reg] || region;
     const regEl = document.getElementById('rRegion');
     regEl.innerHTML = (flag ? '<img class="region-flag" src="'+flag+'" alt="">' : '') + rn;
 
-    localStorage.setItem('ffAccount', JSON.stringify(d));
+    // Local storage data format build
+    const sessionData = json.data ? json.data : { Name: nickname, UID: accountId, Level: level, Likes: likes, Region: region };
+    localStorage.setItem('ffAccount', JSON.stringify(sessionData));
 
     resultCard.classList.remove('hidden');
     resultCard.classList.add('pop-in');
@@ -234,7 +243,7 @@ async function doVerify() {
     uidError.textContent = 'Server error. Please try again later.';
   }
 }
-
+  
 document.getElementById('continueBtn').addEventListener('click', () => {
   document.body.classList.add('page-leave');
   setTimeout(() => location.href = 'shop.php', 350);

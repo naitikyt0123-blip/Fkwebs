@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 
 $uid = preg_replace('/[^0-9]/', '', $_GET['uid'] ?? '');
 if (strlen($uid) < 5) {
-    echo json_encode(["success" => false, "message" => "Invalid UID"]);
+    echo json_encode(["Success" => false, "message" => "Invalid UID"]);
     exit;
 }
 

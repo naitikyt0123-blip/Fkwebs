@@ -1,7 +1,9 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
+header("Access-Control-Allow-Origin: *");
 
 $uid = trim($_GET['uid'] ?? '');
+// Sirf numbers allow karne ke liye
 $uid = preg_replace('/\D/', '', $uid);
 
 if (empty($uid)) {
@@ -12,6 +14,7 @@ if (empty($uid)) {
     exit;
 }
 
+// Tumhari Nayi API ka URL
 $api = "https://f-fuid2-info.vercel.app/api/check?uid=" . urlencode($uid);
 
 $ch = curl_init();
@@ -25,24 +28,41 @@ curl_setopt_array($ch, [
     CURLOPT_SSL_VERIFYHOST => false,
     CURLOPT_HTTPHEADER => [
         "Accept: application/json",
-        "User-Agent: Mozilla/5.0"
+        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     ]
 ]);
 
 $response = curl_exec($ch);
+$error = curl_error($ch);
+curl_close($ch);
 
-if (curl_errno($ch)) {
+// Agar Curl me koi error aaye
+if ($error) {
     echo json_encode([
-        "Success" => false,
-        "message" => curl_error($ch)
+        "success" => false,
+        "message" => "Server connection failed"
     ]);
-    curl_close($ch);
     exit;
 }
 
-$http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
+// Nayi API ke JSON response ko decode karna
+$data = json_decode($response, true);
 
-http_response_code($http ?: 200);
+// Check karna ki API ne 'Success' aur 'Name' return kiya hai ya nahi
+if (isset($data['Status']) && $data['Status'] === 'Success' && isset($data['Player_Details']['Name'])) {
+    
+    // Yahan hum response ko modify kar rahe hain taaki tumhari HTML (frontend) isko samajh sake
+    echo json_encode([
+        "success" => true,
+        "nickname" => $data['Player_Details']['Name'],
+        "uid" => $uid
+    ]);
 
-echo $response;
+} else {
+    // Agar UID galat ho ya API failed ho jaye
+    echo json_encode([
+        "success" => false,
+        "message" => "UID Not Found"
+    ]);
+}
+?>

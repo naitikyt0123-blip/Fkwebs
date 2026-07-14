@@ -10,15 +10,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $targetUrl = $requestData['url'] ?? '';
 
     if (empty($targetUrl)) {
-        echo json_encode(["error" => "Oops! Product URL is missing."]);
+        echo json_encode(["success" => false, "error" => "Oops! Product URL is missing."]);
         exit;
     }
 
-    // Replace this with your actual secret key from the playground!
+    // Yahan apna asli secret key daalein
     $apiKey = "tb-your secret"; 
     $apiUrl = "https://openapi.thunderbit.com/openapi/v1/distill";
 
-    // Notice there is no schema here, just the URL
     $payload = [
         "url" => $targetUrl
     ];
@@ -36,14 +35,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     
     if (curl_errno($ch)) {
-        echo json_encode(["error" => "CURL Error: " . curl_error($ch)]);
+        echo json_encode(["success" => false, "error" => "CURL Error: " . curl_error($ch)]);
     } else {
         if ($httpCode !== 200) {
             echo json_encode([
+                "success" => false,
                 "error" => "Thunderbit API failed with status code: " . $httpCode,
                 "details" => json_decode($response, true)
             ]);
         } else {
+            // Thunderbit ka direct success response (jo aapne share kiya) aage pass kar rahe hain
             echo $response;
         }
     }
@@ -58,11 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thunderbit Distill</title>
+    <title>Thunderbit Distill Output</title>
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: #f3f4f6;
+            background-color: #f8fafc;
             margin: 0;
             padding: 30px 15px;
             display: flex;
@@ -74,100 +75,157 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: white;
             padding: 35px;
             border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             width: 100%;
-            max-width: 550px;
+            max-width: 600px;
             text-align: center;
             box-sizing: border-box;
         }
 
-        h2 { margin: 0 0 10px 0; color: #1f2937; font-size: 24px; }
-        p.sub { color: #6b7280; font-size: 14px; margin-bottom: 25px; }
+        h2 { margin: 0 0 10px 0; color: #1e293b; font-size: 24px; }
+        p.sub { color: #64748b; font-size: 14px; margin-bottom: 25px; }
 
         .input-box { display: flex; flex-direction: column; gap: 12px; }
 
         input[type="url"] {
             padding: 14px 16px;
-            border: 2px solid #e5e7eb;
+            border: 2px solid #e2e8f0;
             border-radius: 10px;
             font-size: 15px;
             outline: none;
+            transition: border-color 0.2s;
         }
+        input[type="url"]:focus { border-color: #3b82f6; }
 
         button {
             padding: 14px;
-            background-color: #10b981;
+            background-color: #8b5cf6;
             color: white;
             border: none;
             border-radius: 10px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
+            transition: background 0.2s;
         }
+        button:hover { background-color: #7c3aed; }
 
-        #loading-state {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px 0;
-        }
-        
+        #loading-state { display: none; flex-direction: column; align-items: center; padding: 20px 0; }
         .spinner {
-            width: 48px; height: 48px;
-            border: 4px solid #f3f4f6;
-            border-left-color: #10b981;
+            width: 40px; height: 40px;
+            border: 4px solid #f1f5f9;
+            border-left-color: #8b5cf6;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-        .status-text { margin-top: 15px; color: #4b5563; font-weight: 500; font-size: 15px; }
+        .status-text { margin-top: 15px; color: #475569; font-weight: 500; font-size: 15px; }
 
-        .result-container, .error-box {
+        /* Structured Result Containers */
+        .result-wrapper {
             display: none;
             width: 100%;
             max-width: 800px;
             margin-top: 25px;
-            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .meta-card {
+            background: white;
+            padding: 25px;
             border-radius: 16px;
-            box-sizing: border-box;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+
+        .meta-title { font-size: 20px; color: #0f172a; font-weight: 700; margin: 0 0 8px 0; }
+        .meta-desc { font-size: 14px; color: #64748b; margin: 0 0 15px 0; line-height: 1.5; }
+        .meta-url { font-size: 12px; color: #3b82f6; word-break: break-all; text-decoration: none; }
+
+        .screenshot-container { display: none; margin-top: 15px; }
+        .screenshot-container img { max-width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; }
+
+        .markdown-card {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            text-align: left;
         }
         
-        .error-box { background: #fef2f2; border: 1px solid #fee2e2; color: #b91c1c; }
-        .result-container { background: #1e1e1e; color: #d4d4d4; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
-        
+        .markdown-header { color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; }
+
         pre {
             white-space: pre-wrap;
             word-wrap: break-word;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Consolas', 'Courier New', monospace;
             font-size: 14px;
-            line-height: 1.5;
-            text-align: left;
+            line-height: 1.6;
+            color: #f8fafc;
             margin: 0;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .error-box {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: left;
+            font-size: 14px;
+            white-space: pre-wrap;
         }
 
         @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        /* Utility class to hide element */
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <div class="main-card">
-        <h2>Thunderbit Distiller</h2>
-        <p class="sub">Extract clean Markdown text from any URL.</p>
+        <h2>Web Page Distiller</h2>
+        <p class="sub">URL paste kijiye aur clean Markdown data extract kijiye.</p>
         
         <div id="input-state" class="input-box">
-            <input type="url" id="product-url" placeholder="https://www.flipkart.com/..." required>
-            <button onclick="runDistill()">Distill Page</button>
+            <input type="url" id="product-url" placeholder="https://example.com/article" required>
+            <button onclick="runDistill()">Extract Data</button>
         </div>
 
         <div id="loading-state">
             <div class="spinner"></div>
-            <div id="live-status" class="status-text">Distilling page to Markdown...</div>
+            <div id="live-status" class="status-text">Fetching data from Thunderbit...</div>
         </div>
     </div>
 
     <div id="error-output" class="error-box"></div>
 
-    <div id="result-output" class="result-container">
-        <pre id="markdown-content"></pre>
+    <div id="result-wrapper" class="result-wrapper hidden">
+        
+        <div class="meta-card">
+            <h3 id="res-title" class="meta-title">Page Title</h3>
+            <p id="res-desc" class="meta-desc">Page description will appear here...</p>
+            <a id="res-url" href="#" target="_blank" class="meta-url">Source URL</a>
+            
+            <div id="res-screenshot-container" class="screenshot-container">
+                <p style="font-size: 12px; color: #64748b; margin-bottom: 5px;">Screenshot:</p>
+                <img id="res-screenshot" src="" alt="Page Screenshot">
+            </div>
+        </div>
+
+        <div class="markdown-card">
+            <div class="markdown-header">Extracted Markdown</div>
+            <pre id="res-markdown"></pre>
+        </div>
+        
     </div>
 
     <script>
@@ -176,16 +234,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const inputState = document.getElementById('input-state');
             const loadingState = document.getElementById('loading-state');
             const errorOutput = document.getElementById('error-output');
-            const resultOutput = document.getElementById('result-output');
-            const markdownContent = document.getElementById('markdown-content');
+            const resultWrapper = document.getElementById('result-wrapper');
 
             if (!urlInput) {
                 alert("Please enter a valid URL!");
                 return;
             }
 
+            // Reset UI
             errorOutput.style.display = 'none';
-            resultOutput.style.display = 'none';
+            resultWrapper.classList.add('hidden');
             inputState.style.display = 'none';
             loadingState.style.display = 'flex';
 
@@ -197,23 +255,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
 
                 const rawText = await response.text();
-                let data;
+                let result;
                 
                 try {
-                    data = JSON.parse(rawText);
+                    result = JSON.parse(rawText);
                 } catch(e) {
                     throw new Error("Invalid response format. Raw Text: \n" + rawText);
                 }
 
-                if (data.error) {
-                    let detailedMsg = data.error;
-                    if(data.details) detailedMsg += "\nDetails: " + JSON.stringify(data.details, null, 2);
+                // Check for backend PHP errors or API errors
+                if (result.error || result.success === false) {
+                    let detailedMsg = result.error || "Unknown error occurred.";
+                    if(result.details) detailedMsg += "\nDetails: " + JSON.stringify(result.details, null, 2);
                     throw new Error(detailedMsg);
                 }
 
-                // Display the raw JSON or markdown returned by distill
-                markdownContent.innerText = JSON.stringify(data, null, 2);
-                resultOutput.style.display = 'block';
+                // Extract data based on the specific JSON schema provided
+                const distillData = result.data || {};
+                const meta = distillData.metadata || {};
+
+                // Map Metadata
+                document.getElementById('res-title').innerText = meta.title || "No Title Found";
+                document.getElementById('res-desc').innerText = meta.description || "No description available.";
+                
+                const urlElem = document.getElementById('res-url');
+                urlElem.innerText = meta.sourceURL || urlInput;
+                urlElem.href = meta.sourceURL || urlInput;
+
+                // Map Screenshot
+                const screenshotContainer = document.getElementById('res-screenshot-container');
+                if (distillData.screenshot && distillData.screenshot.trim() !== "") {
+                    document.getElementById('res-screenshot').src = distillData.screenshot;
+                    screenshotContainer.style.display = 'block';
+                } else {
+                    screenshotContainer.style.display = 'none';
+                }
+
+                // Map Markdown Content
+                document.getElementById('res-markdown').innerText = distillData.markdown || "No content extracted.";
+
+                // Show Results
+                resultWrapper.classList.remove('hidden');
 
             } catch (err) {
                 errorOutput.innerText = "Distill Failed!\n\n" + err.message;

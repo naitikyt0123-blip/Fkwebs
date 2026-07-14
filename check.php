@@ -2,8 +2,8 @@
 header('Content-Type: application/json; charset=utf-8');
 header("Access-Control-Allow-Origin: *");
 
+// UID get karna aur sirf numbers allow karna
 $uid = trim($_GET['uid'] ?? '');
-// Sirf numbers allow karne ke liye
 $uid = preg_replace('/\D/', '', $uid);
 
 if (empty($uid)) {
@@ -14,7 +14,7 @@ if (empty($uid)) {
     exit;
 }
 
-// Tumhari Nayi API ka URL
+// Target API URL
 $api = "https://f-fuid2-info.vercel.app/api/check?uid=" . urlencode($uid);
 
 $ch = curl_init();
@@ -28,7 +28,7 @@ curl_setopt_array($ch, [
     CURLOPT_SSL_VERIFYHOST => false,
     CURLOPT_HTTPHEADER => [
         "Accept: application/json",
-        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent: Mozilla/5.0"
     ]
 ]);
 
@@ -36,30 +36,36 @@ $response = curl_exec($ch);
 $error = curl_error($ch);
 curl_close($ch);
 
-// Agar Curl me koi error aaye
-if ($error) {
+// Agar connection fail ho jaye
+if ($error || empty($response)) {
     echo json_encode([
         "success" => false,
-        "message" => "Server connection failed"
+        "message" => "API connection failed"
     ]);
     exit;
 }
 
-// Nayi API ke JSON response ko decode karna
 $data = json_decode($response, true);
 
-// Check karna ki API ne 'Success' aur 'Name' return kiya hai ya nahi
-if (isset($data['Status']) && $data['Status'] === 'Success' && isset($data['Player_Details']['Name'])) {
+// Check karna ki API ne 'Success' aur 'Player_Details' return kiya hai
+if (isset($data['Status']) && $data['Status'] === 'Success' && isset($data['Player_Details'])) {
     
-    // Yahan hum response ko modify kar rahe hain taaki tumhari HTML (frontend) isko samajh sake
+    $details = $data['Player_Details'];
+    
+    // Yahan hum response ko ekdum tumhari index.php ke format me bana rahe hain
     echo json_encode([
         "success" => true,
-        "nickname" => $data['Player_Details']['Name'],
-        "uid" => $uid
+        "data" => [
+            "Name" => $details['Name'] ?? 'Unknown',
+            "UID" => $uid,
+            "Level" => $details['Level'] ?? 'N/A',
+            "Likes" => $details['Likes'] ?? '0',
+            "Region" => $details['Region'] ?? 'IND'
+        ]
     ]);
 
 } else {
-    // Agar UID galat ho ya API failed ho jaye
+    // Agar UID galat ho
     echo json_encode([
         "success" => false,
         "message" => "UID Not Found"

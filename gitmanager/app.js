@@ -20,7 +20,7 @@ require(['vs/editor/editor.main'], function() {
 // Load Repositories on Boot
 async function loadRepos() {
     try {
-        const res = await fetch('github-api.php?action=list_repos');
+        const res = await fetch('/gitmanager/github-api.php?action=list_repos');
         const data = await res.json();
         const repoList = document.getElementById('repo-list');
         repoList.innerHTML = '';
@@ -51,7 +51,7 @@ async function openRepo(repoName, path = '') {
     const fileList = document.getElementById('file-list');
     fileList.innerHTML = `<li class="p-2 text-gray-400">Loading files...</li>`;
 
-    const res = await fetch(`github-api.php?action=get_repo_contents&repo=${repoName}&path=${path}`);
+    const res = await fetch(`/gitmanager)github-api.php?action=get_repo_contents&repo=${repoName}&path=${path}`);
     const data = await res.json();
 
     fileList.innerHTML = '';
@@ -78,7 +78,7 @@ async function openRepo(repoName, path = '') {
 // Open File in Monaco
 async function openFile(repo, path) {
     currentPath = path;
-    const res = await fetch(`github-api.php?action=get_file&repo=${repo}&path=${path}`);
+    const res = await fetch(`/gitmanager)github-api.php?action=get_file&repo=${repo}&path=${path}`);
     const data = await res.json();
     
     if(data.code === 200) {
@@ -122,7 +122,7 @@ document.getElementById('btn-save').onclick = async () => {
         message: message
     };
 
-    const res = await fetch('github-api.php?action=save_file', {
+    const res = await fetch('/gitmanager/github-api.php?action=save_file', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

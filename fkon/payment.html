@@ -1,0 +1,309 @@
+<!DOCTYPE html>  <html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>Checkss</title>  
+    <script src="https://cdn.tailwindcss.com"></script>  
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">  
+    <style>  
+        body { font-family: 'Inter', sans-serif; background-color: #f1f3f6; }  
+        .payment-option.selected { border-color: #2874f0; background-color: #f0f5ff; }  
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }  
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }  #processing-overlay { z-index: 100; }  
+    .cross-svg { width: 80px; height: 80px; border-radius: 50%; display: block; stroke-width: 3; stroke: #fff; stroke-miterlimit: 10; margin: auto; box-shadow: inset 0px 0px 0px #f25a5a; animation: fill-red .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both; }  
+    .cross-svg__circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 3; stroke-miterlimit: 10; stroke: #f25a5a; fill: none; animation: stroke .6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }  
+    .cross-svg__line { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; }  
+    .cross-svg__line--1 { animation: stroke .3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards; }  
+    .cross-svg__line--2 { animation: stroke .3s cubic-bezier(0.65, 0, 0.45, 1) 0.9s forwards; }  
+    @keyframes stroke { 100% { stroke-dashoffset: 0; } }  
+    @keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }  
+    @keyframes fill-red { 100% { box-shadow: inset 0px 0px 0px 40px #f25a5a; } }  
+</style>
+
+</head>  
+<body class="bg-gray-100">  <div id="processing-overlay" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center">  
+    <div class="bg-white rounded-lg p-8 text-center w-64">  
+        <div id="animation-container" class="h-20 flex justify-center items-center"></div>  
+        <p id="processing-text" class="text-xl font-bold text-gray-800 mt-4"></p>  
+    </div>  
+</div>  
+
+<header class="bg-white text-black sticky top-0 z-50 p-3 flex items-center gap-4 shadow-sm">  
+    <a href="coonfirm.html" class="text-gray-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></a>  
+    <span class="font-semibold text-base">Payments</span>  
+</header>  
+
+<main class="bg-white pb-24">  
+    <div id="payment-options-container" class="p-4 space-y-2">  
+        <div>  
+            <div data-app="phonepe" class="payment-option border p-3 rounded-lg flex items-center gap-3 cursor-pointer"><img src="asset/phonepe.png" class="w-6 h-6"><span class="font-semibold text-gray-700">PhonePe</span></div>  
+            <p data-error-for="phonepe" class="text-red-500 text-sm font-semibold mt-1 ml-2 hidden"></p>  
+        </div>  
+        <div>  
+            <div data-app="paytm" class="payment-option border p-3 rounded-lg flex items-center gap-3 cursor-pointer"><img src="asset/paytmicon.svg" class="w-6 h-6"><span class="font-semibold text-gray-700">Paytm</span></div>  
+            <p data-error-for="paytm" class="text-red-500 text-sm font-semibold mt-1 ml-2 hidden"></p>  
+        </div>  
+        <div>  
+            <div data-app="gpay" class="payment-option border p-3 rounded-lg flex items-center gap-3 cursor-pointer"><img src="asset/gpay.png" class="w-6 h-6"><span class="font-semibold text-gray-700">Google Pay</span></div>  
+            <p data-error-for="gpay" class="text-red-500 text-sm font-semibold mt-1 ml-2 hidden"></p>  
+        </div>  
+        <div>  
+            <div data-app="other" class="payment-option border p-3 rounded-lg flex items-center gap-3 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg><span class="font-semibold text-gray-700">Other UPI / QR Code</span></div>  
+        </div>  
+    </div>  
+
+    <div id="qr-container" class="hidden text-center p-4 border-t">  
+        <p class="font-semibold mb-2">Scan QR to Pay</p>  
+        <div class="flex justify-center"><img id="qr-image" src="" class="w-48 h-48 border rounded-lg p-1"></div>  
+        <p id="qr-timer" class="text-lg font-bold text-red-600 mt-2"></p>  
+        <button id="check-qr-status-btn" class="hidden mt-6 w-full bg-yellow-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-yellow-600">Check Status</button>  
+        <button id="remake-qr-btn" class="hidden mt-2 bg-blue-500 text-white font-bold py-2 px-4 rounded">Regenerate</button>  
+    </div>  
+      
+    <div class="bg-gray-100 p-4 border-t">  
+        <h3 class="font-bold text-gray-500 border-b pb-3 mb-3">PRICE DETAILS</h3>  
+        <div class="space-y-3 text-sm">  
+            <div class="flex justify-between"><span>Price (1 item)</span><span id="price-mrp">₹--</span></div>  
+            <div class="flex justify-between"><span>Discount</span><span id="price-discount" class="text-green-600">- ₹--</span></div>  
+            <div class="flex justify-between"><span>Delivery Charges</span><span class="text-green-600">FREE</span></div>  
+        </div>  
+        <div class="flex justify-between font-bold text-lg border-t border-dashed my-4 pt-4"><span>Total Amount</span><span id="price-total">₹--</span></div>  
+        <p id="savings-message" class="text-green-600 font-semibold text-sm">You will save ₹-- on this order</p>  
+    </div>  
+      
+    <div class="bg-white p-4 text-center border-t">  
+        <div class="flex items-center justify-center gap-2 text-sm text-gray-500 mb-3">  
+            <svg class="w-5 h-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">  
+                <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944a11.954 11.954 0 007.834 3.055a.996.996 0 00-.996.996v2.503a1 1 0 001 1h1.503a.996.996 0 00.996-.996v-2.503a11.954 11.954 0 00-7.834-3.055A11.954 11.954 0 002.166 4.999zM10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />  
+            </svg>  
+            <span>Safe and Secure Payments</span>  
+        </div>  
+        <img src="asset/partner.png" alt="Payment Partners" class="mx-auto h-6">  
+    </div>  
+</main>  
+
+<footer class="fixed bottom-0 left-0 right-0 bg-white border-t p-2 z-10 flex justify-between items-center">  
+    <div><p class="text-lg font-bold" id="footer-total-price">₹--</p></div>  
+    <button id="order-now-btn" class="bg-orange-500 text-white font-bold py-3 px-12 rounded-md">Order Now</button>  
+</footer>  
+
+<script type="module">  
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";  
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";  
+
+    const firebaseConfig = {
+
+apiKey: "AIzaSyBPh60LuPqcH58delO2xGSQN7k48wW-6YM",
+authDomain: "lavinrent.firebaseapp.com",
+databaseURL: "https://lavinrent-default-rtdb.firebaseio.com",
+projectId: "lavinrent",
+storageBucket: "lavinrent.firebasestorage.app",
+messagingSenderId: "1070171538977",
+appId: "1:1070171538977:web:a5f026d387328ebcfec560"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+async function getConfig() {
+    const cached = sessionStorage.getItem('fk_config');
+    if (cached) return JSON.parse(cached);
+
+    const res = await fetch('firesdk.php');
+    if (!res.ok) throw new Error('Config load failed (firesdk.php).');
+
+    const cfg = await res.json();
+    sessionStorage.setItem('fk_config', JSON.stringify(cfg));
+    return cfg;
+}
+
+// --- GLOBAL PAYMENT VARIABLES ---  
+    let upiId = "default@upi";   
+    let payeeName = "DEFAULT MERCHANT";  
+    let trCode = "DEFAULTTRCODE12345";  
+      
+    // --- DOM Elements (unchanged) ---  
+    const paymentContainer = document.getElementById('payment-options-container');  
+    const orderNowBtn = document.getElementById('order-now-btn');  
+    const qrContainer = document.getElementById('qr-container');  
+    const qrImage = document.getElementById('qr-image');  
+    const qrTimer = document.getElementById('qr-timer');  
+    const remakeQrBtn = document.getElementById('remake-qr-btn');  
+    const checkQrStatusBtn = document.getElementById('check-qr-status-btn');  
+    const processingOverlay = document.getElementById('processing-overlay');  
+    const animationContainer = document.getElementById('animation-container');  
+    const processingText = document.getElementById('processing-text');  
+    const errorMessages = document.querySelectorAll('[data-error-for]');  
+      
+    let selectedApp = null, countdownInterval;  
+    const productId = sessionStorage.getItem('productId');  
+    let product = null;  
+
+    async function fetchPaymentSettings() {  
+        try {  
+            const settingsRef = doc(db, "settings", "payment");  
+            const settingsSnap = await getDoc(settingsRef);  
+            if (settingsSnap.exists()) {  
+                const settings = settingsSnap.data();  
+                // Update global variables with fetched data  
+                upiId = settings.upiId || upiId;  
+                payeeName = settings.payeeName || payeeName;  
+                trCode = settings.trCode || trCode; // NEW: Fetching TR Code  
+                console.log("Payment settings fetched:", { upiId, trCode, payeeName });  
+            } else {  
+                console.warn("Payment settings document not found in Firebase. Using defaults.");  
+            }  
+        } catch (error) {  
+            console.error("Error fetching payment settings:", error);  
+        }  
+    }  
+
+    async function initializePage() {  
+        // First, fetch payment settings  
+        await fetchPaymentSettings();   
+
+        if (!productId) {  
+            document.querySelector('main').innerHTML = '<h1 class="text-center text-red-500 p-8">Product ID not found! Please go back and select a product.</h1>';  
+            orderNowBtn.disabled = true; return;  
+        }  
+        try {  
+            const cfg = await getConfig();
+const productRef = doc(db, cfg.collection, productId);
+            const docSnap = await getDoc(productRef);  
+            if (docSnap.exists()) {  
+                product = docSnap.data();  
+                const discountAmount = product.originalPrice - product.price;  
+                document.getElementById('price-mrp').innerText = `₹${product.originalPrice}`;  
+                document.getElementById('price-discount').innerText = `- ₹${discountAmount}`;  
+                document.getElementById('price-total').innerText = `₹${product.price}`;  
+                document.getElementById('footer-total-price').innerText = `₹${product.price}`;  
+                document.getElementById('savings-message').innerText = `You will save ₹${discountAmount} on this order`;  
+            } else { throw new Error("Product not found."); }  
+        } catch (error) {  
+            document.querySelector('main').innerHTML = `<h1 class="text-center text-red-500 p-8">Error: ${error.message}</h1>`;  
+            orderNowBtn.disabled = true;  
+        }  
+    }  
+      
+    function resetAllViews() {  
+         qrContainer.classList.add('hidden');  
+         orderNowBtn.classList.remove('hidden');  
+         clearInterval(countdownInterval);  
+         errorMessages.forEach(msg => msg.classList.add('hidden'));  
+    }  
+
+    function startTimer() {  
+        let timeLeft = 180;  
+        remakeQrBtn.classList.add('hidden');  
+        checkQrStatusBtn.classList.remove('hidden');  
+        qrTimer.textContent = `Expires in: 3:00`;  
+        countdownInterval = setInterval(() => {  
+            if (timeLeft <= 0) {  
+                clearInterval(countdownInterval);  
+                qrTimer.textContent = "QR Expired!";  
+                checkQrStatusBtn.classList.add('hidden');  
+                remakeQrBtn.classList.remove('hidden');  
+            } else {  
+                const minutes = Math.floor(timeLeft / 60);  
+                const seconds = timeLeft % 60;  
+                qrTimer.textContent = `Expires in: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;  
+                timeLeft--;  
+            }  
+        }, 1000);  
+    }  
+
+    async function generateQrCode() {  
+        if (!product) return;  
+        resetAllViews();  
+          
+        // Using dynamically fetched global variables  
+        const amount = product.price;  
+        const upiString = `upi://pay?pa=${upiId}&pn=${payeeName}&am=${amount}&cu=INR&tr=${trCode}&tn=Order-${Date.now()}`;  
+          
+        qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiString)}`;  
+          
+        qrContainer.classList.remove('hidden');  
+        orderNowBtn.classList.add('hidden');  
+        startTimer();  
+    }  
+      
+    function showFailedAnimation(regenerateQr = false) {  
+        processingOverlay.classList.remove('hidden');  
+        animationContainer.innerHTML = '<div class="loader"></div>';  
+        processingText.textContent = 'Verifying Payment...';  
+          
+        setTimeout(() => {  
+            animationContainer.innerHTML = `<svg class="cross-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="cross-svg__circle" cx="26" cy="26" r="25" fill="none"/><path class="cross-svg__line cross-svg__line--1" fill="none" d="M16 16 36 36"/><path class="cross-svg__line cross-svg__line--2" fill="none" d="M36 16 16 36"/></svg>`;  
+            processingText.textContent = 'Transaction Failed!';  
+            setTimeout(() => {  
+                processingOverlay.classList.add('hidden');  
+                if (regenerateQr) {  
+                    generateQrCode();  
+                }  
+            }, 2500);  
+        }, 2000);  
+    }  
+      
+    // --- EVENT LISTENERS ---  
+    paymentContainer.addEventListener('click', (e) => {  
+        const clickedOption = e.target.closest('.payment-option');  
+        if (!clickedOption) return;  
+        resetAllViews();  
+        paymentContainer.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));  
+        clickedOption.classList.add('selected');  
+        selectedApp = clickedOption.getAttribute('data-app');  
+        if (selectedApp === 'other') {  
+            generateQrCode();  
+        }  
+    });  
+
+    checkQrStatusBtn.addEventListener('click', () => showFailedAnimation(true));  
+    remakeQrBtn.addEventListener('click', generateQrCode);  
+
+    orderNowBtn.addEventListener('click', async () => {  
+        if (!selectedApp || selectedApp === 'other') { alert('Please select a payment app.'); return; }  
+        if (!product) { alert('Product details not found.'); return; }  
+          
+        errorMessages.forEach(msg => msg.classList.add('hidden'));  
+
+        // Using dynamically fetched global variables  
+        const transactionNote = `Order for ${product.title.substring(0,20)}`;  
+        const amount = product.price;  
+
+        let upiUrl = '';  
+        switch(selectedApp) {  
+            // Using global upiId, trCode, and payeeName  
+            case 'gpay': upiUrl = `tez://upi/pay?pa=${upiId}&pn=${payeeName}&am=${amount}&cu=INR&tr=${trCode}&tn=${transactionNote}`; break;  
+            case 'phonepe': upiUrl = `phonepe://pay?pa=${upiId}&pn=${payeeName}&am=${amount}&cu=INR&tr=${trCode}&tn=${transactionNote}`; break;  
+            case 'paytm': upiUrl = `paytmmp://pay?pa=${upiId}&pn=${payeeName}&am=${amount}&cu=INR&tr=${trCode}&tn=${transactionNote}`; break;  
+        }  
+          
+        sessionStorage.setItem('paymentAttempted', 'true');  
+          
+        let appNotFound = true;  
+        const visibilityListener = () => { if (document.visibilityState === 'hidden') { appNotFound = false; } };  
+        document.addEventListener('visibilitychange', visibilityListener, { once: true });  
+          
+        window.location.href = upiUrl;  
+
+        setTimeout(() => {  
+            if (appNotFound) {  
+                const errorEl = document.querySelector(`[data-error-for="${selectedApp}"]`);  
+                if (errorEl) {  
+                    errorEl.textContent = 'App not found. Please ensure it is installed.';  
+                    errorEl.classList.remove('hidden');  
+                }  
+                sessionStorage.removeItem('paymentAttempted');  
+            }  
+        }, 1200);  
+    });  
+      
+    document.addEventListener('DOMContentLoaded', () => {  
+        initializePage();  
+        if (sessionStorage.getItem('paymentAttempted') === 'true') {  
+            sessionStorage.removeItem('paymentAttempted');  
+            showFailedAnimation(false);  
+        }  
+    });  
+</script>
+
+</body>  
+</html>

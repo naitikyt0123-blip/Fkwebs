@@ -57,6 +57,6 @@
         </div>
     </main>
 
-    <script src="app.js"></script>
+    <script src="gitmanager/app.js"></script>
 </body>
 </html>

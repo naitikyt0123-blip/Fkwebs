@@ -1,5 +1,4 @@
 <?php
-// github-api.php
 require_once 'config.php';
 header('Content-Type: application/json');
 
@@ -20,7 +19,7 @@ function makeGitHubRequest($url, $method = 'GET', $data = null) {
     if ($method !== 'GET') {
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         if ($data) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, is_string($data) ? $data : json_encode($data));
         }
     }
 
@@ -33,22 +32,33 @@ function makeGitHubRequest($url, $method = 'GET', $data = null) {
 
 switch ($action) {
     case 'list_repos':
-        $res = makeGitHubRequest('/user/repos?sort=updated&per_page=100');
-        echo json_encode($res);
+        echo json_encode(makeGitHubRequest('/user/repos?sort=updated&per_page=100'));
+        break;
+
+    case 'create_repo':
+        $data = json_decode(file_get_contents('php://input'), true);
+        echo json_encode(makeGitHubRequest('/user/repos', 'POST', [
+            'name' => $data['name'],
+            'private' => $data['private'] ?? true,
+            'auto_init' => true // Initializes with a README so it's not empty
+        ]));
+        break;
+
+    case 'delete_repo':
+        $data = json_decode(file_get_contents('php://input'), true);
+        echo json_encode(makeGitHubRequest("/repos/" . GITHUB_USERNAME . "/{$data['repo']}", 'DELETE'));
         break;
 
     case 'get_repo_contents':
         $repo = $_GET['repo'];
-        $path = $_GET['path'] ?? '';
-        $res = makeGitHubRequest("/repos/" . GITHUB_USERNAME . "/$repo/contents/$path");
-        echo json_encode($res);
+        $path = ltrim($_GET['path'] ?? '', '/');
+        echo json_encode(makeGitHubRequest("/repos/" . GITHUB_USERNAME . "/$repo/contents/$path"));
         break;
 
     case 'get_file':
         $repo = $_GET['repo'];
-        $path = $_GET['path'];
+        $path = ltrim($_GET['path'], '/');
         $res = makeGitHubRequest("/repos/" . GITHUB_USERNAME . "/$repo/contents/$path");
-        // GitHub returns base64 content
         if(isset($res['body']['content'])) {
             $res['body']['decoded_content'] = base64_decode($res['body']['content']);
         }
@@ -58,27 +68,83 @@ switch ($action) {
     case 'save_file':
         $data = json_decode(file_get_contents('php://input'), true);
         $repo = $data['repo'];
-        $path = $data['path'];
-        $content = base64_encode($data['content']);
-        $message = $data['message'] ?? "Update $path via Web Manager";
-        $sha = $data['sha']; // Required by GitHub to update existing files
-
-        $payload = [
-            'message' => $message,
-            'content' => $content,
-            'sha' => $sha
-        ];
+        $path = ltrim($data['path'], '/');
         
-        $res = makeGitHubRequest("/repos/" . GITHUB_USERNAME . "/$repo/contents/$path", 'PUT', $payload);
-        echo json_encode($res);
+        $payload = [
+            'message' => $data['message'] ?? "Update $path",
+            'content' => base64_encode($data['content'])
+        ];
+        if (!empty($data['sha'])) $payload['sha'] = $data['sha'];
+        
+        echo json_encode(makeGitHubRequest("/repos/" . GITHUB_USERNAME . "/$repo/contents/$path", 'PUT', $payload));
+        break;
+
+    case 'delete_file':
+        $data = json_decode(file_get_contents('php://input'), true);
+        $repo = $data['repo'];
+        $path = ltrim($data['path'], '/');
+        
+        $payload = [
+            'message' => "Delete $path",
+            'sha' => $data['sha']
+        ];
+        echo json_encode(makeGitHubRequest("/repos/" . GITHUB_USERNAME . "/$repo/contents/$path", 'DELETE', $payload));
         break;
 
     case 'upload_zip':
-        // ZIP extraction aur Tree API commit logic yahan aayega
-        // 1. ZIP upload accept karein
-        // 2. Temp folder me extract karein
-        // 3. GitHub Tree API use karke multi-file commit banayein
-        echo json_encode(['status' => 'error', 'message' => 'ZIP upload logic implementation pending based on Tree API constraints.']);
+        if (!isset($_FILES['zipfile']) || !isset($_POST['repo'])) {
+            echo json_encode(['error' => 'Missing file or repo']);
+            exit;
+        }
+
+        $repo = $_POST['repo'];
+        $basePath = isset($_POST['path']) ? trim($_POST['path'], '/') . '/' : '';
+        if ($basePath === '/') $basePath = '';
+
+        $zipPath = $_FILES['zipfile']['tmp_name'];
+        $zip = new ZipArchive;
+        if ($zip->open($zipPath) === TRUE) {
+            $tempDir = sys_get_temp_dir() . '/' . uniqid('repo_');
+            mkdir($tempDir);
+            $zip->extractTo($tempDir);
+            $zip->close();
+
+            // Iterate through extracted files
+            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($tempDir));
+            $results = [];
+
+            foreach ($iterator as $file) {
+                if ($file->isDir()) continue;
+                
+                $filePath = $file->getPathname();
+                $relativePath = str_replace($tempDir . '/', '', $filePath);
+                
+                // Ignore system files
+                if (strpos($relativePath, '__MACOSX') !== false || strpos($relativePath, '.DS_Store') !== false) continue;
+
+                $content = base64_encode(file_get_contents($filePath));
+                $targetPath = ltrim($basePath . $relativePath, '/');
+
+                // Commit each file to GitHub
+                $res = makeGitHubRequest("/repos/" . GITHUB_USERNAME . "/$repo/contents/$targetPath", 'PUT', [
+                    'message' => "Extracted from ZIP: $relativePath",
+                    'content' => $content
+                ]);
+                $results[] = ['file' => $targetPath, 'status' => $res['code']];
+            }
+
+            // Cleanup temp dir
+            $dirIterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($tempDir, RecursiveDirectoryIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+            foreach ($dirIterator as $fileInfo) {
+                $todo = ($fileInfo->isDir() ? 'rmdir' : 'unlink');
+                $todo($fileInfo->getRealPath());
+            }
+            rmdir($tempDir);
+
+            echo json_encode(['code' => 200, 'message' => 'ZIP Extracted and Uploaded', 'details' => $results]);
+        } else {
+            echo json_encode(['code' => 500, 'error' => 'Failed to open ZIP file']);
+        }
         break;
 
     default:

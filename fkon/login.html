@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Signup - Dhamaka Offer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style> 
+        body { font-family: 'Inter', sans-serif; background-color: rgba(0,0,0,0.5); } 
+        .floating-label-container { position: relative; }
+        .floating-label-input {
+            padding: 28px 12px 10px 12px;
+            border: 1px solid #d1d5db;
+            font-size: 16px;
+        }
+        .floating-label {
+            position: absolute;
+            top: 18px;
+            left: 12px;
+            font-size: 1rem;
+            color: #6b7280;
+            transition: all 0.2s ease-in-out;
+            pointer-events: none;
+        }
+        .floating-label-input:focus + .floating-label,
+        .floating-label-input:not(:placeholder-shown) + .floating-label {
+            top: 8px;
+            font-size: 0.75rem;
+            color: #2874f0;
+        }
+        .floating-label-input:focus {
+            outline: none;
+            border-color: #2874f0;
+            border-width: 2px;
+            padding: 27px 11px 9px 11px;
+        }
+        
+        /* Smooth Animation for revealing fields */
+        @keyframes slideDownFade {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .smooth-show {
+            animation: slideDownFade 0.4s ease forwards;
+            display: block !important;
+        }
+    </style>
+</head>
+<body class="flex items-end sm:items-center justify-center min-h-screen">
+    <div class="w-full sm:max-w-md bg-white sm:rounded-lg shadow-lg h-[90vh] sm:h-auto flex flex-col">
+        <header class="flex justify-between items-center p-4 border-b">
+             <img src="https://static-assets-web.flixcart.com/fk-p-linchpin-web/fk-cp-zion/img/flipkart-plus_8d85f4.png" alt="Flipkart Logo" class="h-6">
+            <a href="index.html" class="text-gray-500 hover:text-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </a>
+        </header>
+
+        <div class="p-6 sm:p-8 flex-grow">
+            <h2 id="form-title" class="text-xl font-semibold text-gray-800">Log in for the best experience</h2>
+            <p id="form-subtitle" class="text-gray-500 mt-2 mb-6">Enter your Email ID to continue</p>
+            
+            <form id="auth-form" class="space-y-4">
+                <div class="floating-label-container">
+                    <input id="email" type="email" placeholder=" " class="floating-label-input w-full rounded-md" required>
+                    <label for="email" class="floating-label">Email ID</label>
+                </div>
+
+                <div id="name-container" class="floating-label-container hidden">
+                    <input id="name" type="text" placeholder=" " class="floating-label-input w-full rounded-md">
+                    <label for="name" class="floating-label">Enter your name</label>
+                </div>
+                
+                <div id="password-container" class="floating-label-container hidden">
+                    <input id="password" type="password" placeholder=" " class="floating-label-input w-full rounded-md">
+                    <label for="password" class="floating-label">Password</label>
+                </div>
+
+                <p id="error-message" class="text-red-500 text-xs text-center hidden"></p>
+                <p class="text-xs text-gray-500 pt-2">By continuing, you agree to our <a href="#" class="text-blue-600">Terms of Use</a> and <a href="#" class="text-blue-600">Privacy Policy</a>.</p>
+                
+                <button id="submit-btn" type="submit" class="w-full bg-[#fb641b] text-white font-bold py-3 rounded-md hover:bg-orange-600 transition-colors disabled:opacity-70 disabled:cursor-not-allowed">Continue</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, fetchSignInMethodsForEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        // Fetch config from firesdk.php for consistency
+        async function getConfig() {
+            const cached = sessionStorage.getItem('fk_config');
+            if (cached) return JSON.parse(cached);
+            const res = await fetch('firesdk.php');
+            if (!res.ok) throw new Error('Config load failed (firesdk.php).');
+            const cfg = await res.json();
+            sessionStorage.setItem('fk_config', JSON.stringify(cfg));
+            return cfg;
+        }
+
+        async function initAuth() {
+            try {
+                const cfg = await getConfig();
+                const app = initializeApp(cfg.firebase);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+
+                const authForm = document.getElementById('auth-form');
+                const nameContainer = document.getElementById('name-container');
+                const passwordContainer = document.getElementById('password-container');
+                const errorEl = document.getElementById('error-message');
+                const submitBtn = document.getElementById('submit-btn');
+                let isUserNew = false;
+
+                const ensureCartExists = async (userId) => {
+                    const cartRef = doc(db, "carts", userId);
+                    try {
+                        const docSnap = await getDoc(cartRef);
+                        if (!docSnap.exists()) {
+                            await setDoc(cartRef, { items: [] });
+                        }
+                    } catch (error) { console.error("Error ensuring cart exists: ", error); }
+                };
+
+                authForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    errorEl.classList.add('hidden');
+                    const emailInput = document.getElementById('email');
+                    const email = emailInput.value.trim();
+
+                    // --- Phase 1: Check if user exists ---
+                    if (submitBtn.textContent === 'Continue') {
+                        if (!email) { errorEl.textContent = "Please enter an email."; errorEl.classList.remove('hidden'); return; }
+                        
+                        submitBtn.textContent = 'Checking...';
+                        submitBtn.disabled = true;
+
+                        try {
+                            const methods = await fetchSignInMethodsForEmail(auth, email);
+                            if (methods.length === 0) {
+                                // User is NEW
+                                isUserNew = true;
+                                document.getElementById('form-title').textContent = "Looks like you're new here!";
+                                document.getElementById('form-subtitle').textContent = "Create an account to get started";
+                                
+                                // Smooth reveal
+                                nameContainer.classList.remove('hidden');
+                                nameContainer.classList.add('smooth-show');
+                                passwordContainer.classList.remove('hidden');
+                                passwordContainer.classList.add('smooth-show');
+                                
+                                submitBtn.textContent = 'Sign Up';
+                                emailInput.readOnly = true;
+                            } else {
+                                // User EXISTS
+                                isUserNew = false;
+                                document.getElementById('form-subtitle').textContent = "Enter your password to log in";
+                                
+                                // Smooth reveal
+                                passwordContainer.classList.remove('hidden');
+                                passwordContainer.classList.add('smooth-show');
+                                
+                                submitBtn.textContent = 'Log In';
+                                emailInput.readOnly = true;
+                            }
+                        } catch(error) {
+                            errorEl.textContent = "An error occurred. Please try again.";
+                            errorEl.classList.remove('hidden');
+                        } finally {
+                            submitBtn.disabled = false;
+                        }
+                        return;
+                    }
+
+                    // --- Phase 2: Handle Login or Signup ---
+                    const password = document.getElementById('password').value;
+                    submitBtn.disabled = true;
+
+                    if (isUserNew) {
+                        // SIGNUP LOGIC
+                        const name = document.getElementById('name').value.trim();
+                        if(!name || !password) { errorEl.textContent = "Please fill all fields."; errorEl.classList.remove('hidden'); submitBtn.disabled = false; return; }
+                        
+                        submitBtn.textContent = 'Signing Up...';
+                        createUserWithEmailAndPassword(auth, email, password)
+                            .then(userCredential => {
+                                updateProfile(auth.currentUser, { displayName: name }).then(() => {
+                                    ensureCartExists(userCredential.user.uid).then(() => {
+                                        window.location.href = 'index.html';
+                                    });
+                                });
+                            })
+                            .catch(err => {
+                                errorEl.textContent = err.message;
+                                errorEl.classList.remove('hidden');
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Sign Up';
+                            });
+                    } else {
+                        // LOGIN LOGIC
+                        if(!password) { errorEl.textContent = "Please enter your password."; errorEl.classList.remove('hidden'); submitBtn.disabled = false; return; }
+                        
+                        submitBtn.textContent = 'Logging In...';
+                        signInWithEmailAndPassword(auth, email, password)
+                            .then(() => {
+                                window.location.href = 'index.html';
+                            })
+                            .catch(err => {
+                                if(err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential'){
+                                     errorEl.textContent = 'Incorrect password. Please try again.';
+                                } else {
+                                     errorEl.textContent = err.message;
+                                }
+                                errorEl.classList.remove('hidden');
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Log In';
+                            });
+                    }
+                });
+
+            } catch (err) {
+                console.error("Initialization failed:", err);
+                document.getElementById('error-message').textContent = "Failed to connect to the server.";
+                document.getElementById('error-message').classList.remove('hidden');
+            }
+        }
+
+        // Initialize script
+        initAuth();
+    </script>
+</body>
+</html>

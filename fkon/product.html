@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f3f6; }
+        
+        /* Smooth Slider CSS Update */
+        .slider-container { position: relative; width: 100%; overflow: hidden; }
+        .slider-wrapper { 
+            display: flex; 
+            overflow-x: auto; 
+            scroll-snap-type: x mandatory; 
+            scroll-behavior: smooth; 
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+        .slider-wrapper::-webkit-scrollbar { display: none; } /* Chrome, Safari and Opera */
+        .slider-slide { flex-shrink: 0; width: 100%; scroll-snap-align: start; }
+        
+        .slider-btn { position: absolute; top: 50%; transform: translateY(-50%); background-color: rgba(0,0,0,0.3); color: white; border: none; padding: 0.5rem; border-radius: 50%; cursor: pointer; z-index: 10; }
+        .slider-btn.prev { left: 10px; }
+        .slider-btn.next { right: 10px; }
+        
+        /* Fade-in Animation */
+        .content-container { opacity: 0; transition: opacity 0.5s ease-in-out; }
+        .content-container.visible { opacity: 1; }
+    </style>
+</head>
+<body class="bg-white">
+
+    <header class="bg-[#2874f0] text-white sticky top-0 z-50 p-3 flex items-center gap-4">
+        <a href="index.html" class="text-white"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></a>
+        <span class="font-semibold">Product Details</span>
+    </header>
+
+    <main id="main-content" class="pb-24">
+        <div id="skeleton-loader">
+            <div class="slider-container bg-gray-200 h-64 md:h-96 animate-pulse"></div>
+            <div class="p-4 space-y-3">
+                <div class="h-6 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                <div class="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+            </div>
+        </div>
+
+        <div id="product-details-container" class="content-container">
+            <div id="image-slider" class="slider-container bg-white h-64 md:h-96">
+                <div id="slider-wrapper" class="slider-wrapper h-full"></div>
+                <button id="prev-btn" class="slider-btn prev">❮</button>
+                <button id="next-btn" class="slider-btn next">❯</button>
+            </div>
+            <div class="px-4 mt-4"><h1 id="product-title" class="text-gray-800 text-lg leading-tight"></h1></div>
+            <div class="px-4 mt-2 flex items-center gap-2">
+                <p id="product-price" class="text-2xl font-bold text-gray-900"></p>
+                <p id="product-original-price" class="text-gray-500 line-through"></p>
+                <p id="product-discount" class="text-green-600 font-semibold"></p>
+            </div>
+            <p class="px-4 text-green-700 text-xs font-semibold mt-1">Hurry, limited time offer!</p>
+            
+            <div class="my-3 border-t pt-2">
+                <img src="asset/inform.png" alt="Product Information" class="w-full">
+            </div>
+
+            <div id="feedback-section" class="p-4 border-t">
+                <h2 class="text-xl font-bold mb-4">Customer Images & Reviews</h2>
+                <div id="feedback-images-container" class="grid grid-cols-3 md:grid-cols-5 gap-2"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t flex z-10">
+        <button id="add-to-cart-btn" class="w-1/2 text-center py-3 text-gray-700 font-semibold border-r hover:bg-gray-100 transition-colors">Add to Cart</button>
+        <button id="buy-now-btn" class="w-1/2 text-center block py-3 text-white font-semibold bg-orange-500 hover:bg-orange-600 transition-colors">Buy Now</button>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyBPh60LuPqcH58delO2xGSQN7k48wW-6YM",
+          authDomain: "lavinrent.firebaseapp.com",
+          databaseURL: "https://lavinrent-default-rtdb.firebaseio.com",
+          projectId: "lavinrent",
+          storageBucket: "lavinrent.firebasestorage.app",
+          messagingSenderId: "1070171538977",
+          appId: "1:1070171538977:web:a5f026d387328ebcfec560"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const mainContent = document.getElementById('main-content');
+        const skeletonLoader = document.getElementById('skeleton-loader');
+        const productContainer = document.getElementById('product-details-container');
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
+
+        // Fetch config from firesdk.php
+        async function getConfig() {
+            const cached = sessionStorage.getItem('fk_config');
+            if (cached) return JSON.parse(cached);
+            const res = await fetch('firesdk.php');
+            if (!res.ok) throw new Error('Config load failed (firesdk.php).');
+            const cfg = await res.json();
+            sessionStorage.setItem('fk_config', JSON.stringify(cfg));
+            return cfg;
+        }
+
+        async function loadProductDetails(id) {
+            try {
+                // Dynamic collection fetch
+                const cfg = await getConfig();
+                const productRef = doc(db, cfg.collection, id); 
+                const docSnap = await getDoc(productRef);
+
+                if (docSnap.exists()) {
+                    const product = docSnap.data();
+                    
+                    document.getElementById('product-title').textContent = product.title;
+                    document.getElementById('product-price').textContent = `₹${product.price}`;
+                    document.getElementById('product-original-price').textContent = `₹${product.originalPrice}`;
+                    document.getElementById('product-discount').textContent = product.discount;
+
+                    const sliderWrapper = document.getElementById('slider-wrapper');
+                    sliderWrapper.innerHTML = '';
+                    product.featureImages.forEach(imgUrl => {
+                        sliderWrapper.innerHTML += `<div class="slider-slide flex items-center justify-center p-2"><img src="${imgUrl}" class="max-h-full max-w-full object-contain"></div>`;
+                    });
+                    setupSlider();
+
+                    const feedbackContainer = document.getElementById('feedback-images-container');
+                    feedbackContainer.innerHTML = '';
+                    if (product.feedbackImages && product.feedbackImages.length > 0) {
+                        product.feedbackImages.forEach(imgUrl => {
+                            feedbackContainer.innerHTML += `<img src="${imgUrl}" class="w-full h-24 object-cover rounded-md cursor-pointer transition-transform hover:scale-105">`;
+                        });
+                    } else {
+                        feedbackContainer.innerHTML = '<p class="col-span-full text-gray-500">No customer images available yet.</p>';
+                    }
+
+                    skeletonLoader.classList.add('hidden');
+                    productContainer.classList.add('visible');
+
+                } else {
+                    mainContent.innerHTML = '<p class="text-center p-10 font-bold text-red-500">Sorry, this product does not exist.</p>';
+                }
+            } catch (error) {
+                console.error("Error fetching product details:", error);
+                mainContent.innerHTML = '<p class="text-center p-10 font-bold text-red-500">Could not load product details.</p>';
+            }
+        }
+        
+        function setupSlider() {
+            const wrapper = document.getElementById('slider-wrapper');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            if (!wrapper || wrapper.children.length === 0) return;
+            
+            // Native scroll system
+            nextBtn.addEventListener('click', () => { 
+                wrapper.scrollBy({ left: wrapper.clientWidth, behavior: 'smooth' }); 
+            });
+            prevBtn.addEventListener('click', () => { 
+                wrapper.scrollBy({ left: -wrapper.clientWidth, behavior: 'smooth' }); 
+            });
+        }
+
+        const buyNowBtn = document.getElementById('buy-now-btn');
+        const addToCartBtn = document.getElementById('add-to-cart-btn');
+
+        buyNowBtn.addEventListener('click', () => {
+            const user = auth.currentUser;
+            if (!user) { window.location.href = `login.html`; return; }
+            sessionStorage.setItem('productId', productId);
+            window.location.href = 'address.html';
+        });
+
+        addToCartBtn.addEventListener('click', () => {
+            const user = auth.currentUser;
+            if (!user) { window.location.href = `login.html`; return; }
+            addToCartBtn.textContent = 'Adding...'; addToCartBtn.disabled = true;
+            const cartRef = doc(db, "carts", user.uid);
+            getDoc(cartRef).then(docSnap => {
+                const items = docSnap.exists() ? docSnap.data().items || [] : [];
+                const existingItem = items.find(item => item.productId === productId);
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                    return updateDoc(cartRef, { items: items });
+                } else {
+                    const newItem = { productId: productId, quantity: 1 };
+                    return docSnap.exists() ? updateDoc(cartRef, { items: arrayUnion(newItem) }) : setDoc(cartRef, { userId: user.uid, items: [newItem], createdAt: serverTimestamp() });
+                }
+            }).then(() => {
+                alert('Product added to your cart!');
+            }).catch(error => {
+                console.error("Error adding to cart: ", error);
+                alert('Failed to add product to cart.');
+            }).finally(() => {
+                addToCartBtn.textContent = 'Add to Cart';
+                addToCartBtn.disabled = false;
+            });
+        });
+
+        if (!productId) {
+            mainContent.innerHTML = '<p class="text-center p-10 font-bold text-red-500">Error: Product ID not found.</p>';
+        } else {
+            loadProductDetails(productId);
+        }
+    </script>
+</body>
+</html>

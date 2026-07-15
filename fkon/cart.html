@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f3f6; }
+        .quantity-btn {
+            border: 1px solid #c2c2c2;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .quantity-btn:hover {
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Header -->
+    <header class="bg-[#2874f0] text-white sticky top-0 z-50">
+        <div class="flex items-center gap-2 px-3 py-2">
+            <a href="index.html" class="text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m7 7H3" /></svg>
+            </a>
+            <span class="font-semibold">My Cart</span>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-2 lg:p-4 pb-16">
+        <!-- Login Prompt -->
+        <div id="login-prompt" class="hidden text-center bg-white p-8 rounded-lg shadow-md mt-4">
+            <h2 class="text-xl font-bold mb-4">Please log in to see your cart</h2>
+            <a href="login.html" class="inline-block bg-orange-500 text-white font-bold py-3 px-8 rounded-md hover:bg-orange-600 transition-colors">Login Now</a>
+        </div>
+        
+        <!-- Empty Cart View -->
+        <div id="empty-cart" class="hidden text-center bg-white p-8 rounded-lg shadow-md mt-4">
+            <img src="https://rukminim1.flixcart.com/www/800/800/promos/16/05/2019/d438a32e-765a-4d8b-b4a6-520b560971e8.png?q=90" alt="Empty Cart" class="w-48 mx-auto mb-4">
+            <h2 class="text-xl font-bold">Your cart is empty!</h2>
+            <p class="text-gray-500 mt-2">Add items to it now.</p>
+            <a href="index.html" class="mt-6 inline-block bg-[#2874f0] text-white font-bold py-3 px-12 rounded-md hover:bg-blue-700 transition-colors">Shop Now</a>
+        </div>
+
+        <!-- Main Cart View -->
+        <div id="cart-view" class="hidden lg:grid lg:grid-cols-3 lg:gap-4 mt-4">
+            <!-- Left Side: Cart Items -->
+            <div class="lg:col-span-2">
+                <div id="cart-items-container" class="bg-white rounded-lg shadow-md">
+                    <!-- Cart items will be loaded here -->
+                </div>
+                <div class="bg-white rounded-lg shadow-md mt-4 p-4 flex justify-end">
+                    <a href="address.html" id="place-order-btn-bottom" class="bg-orange-500 text-white font-bold py-3 px-12 rounded-md hover:bg-orange-600 transition-colors">PLACE ORDER</a>
+                </div>
+            </div>
+
+            <!-- Right Side: Price Details -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-4 sticky top-20">
+                    <h3 class="text-gray-500 font-bold border-b pb-3">PRICE DETAILS</h3>
+                    <div class="space-y-3 text-sm mt-4">
+                        <div class="flex justify-between">
+                            <span>Price (<span id="total-items">0</span> items)</span>
+                            <span id="total-mrp">₹0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Discount</span>
+                            <span id="total-discount" class="text-green-600">- ₹0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Delivery Charges</span>
+                            <span class="text-green-600">FREE</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between font-bold text-lg border-t border-dashed my-4 pt-4">
+                        <span>Total Amount</span>
+                        <span id="total-amount">₹0</span>
+                    </div>
+                    <p id="savings-message" class="text-green-600 font-semibold text-sm">You will save ₹0 on this order</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        // Fetch config from firesdk.php
+        async function getConfig() {
+            const cached = sessionStorage.getItem('fk_config');
+            if (cached) return JSON.parse(cached);
+            const res = await fetch('firesdk.php');
+            if (!res.ok) throw new Error('Config load failed (firesdk.php).');
+            const cfg = await res.json();
+            sessionStorage.setItem('fk_config', JSON.stringify(cfg));
+            return cfg;
+        }
+
+        async function initCart() {
+            try {
+                const cfg = await getConfig();
+                const app = initializeApp(cfg.firebase);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+                
+                // Dynamic collection name products fetch karne ke liye
+                const dynamicCollection = cfg.collection; 
+
+                const loginPrompt = document.getElementById('login-prompt');
+                const emptyCartView = document.getElementById('empty-cart');
+                const cartView = document.getElementById('cart-view');
+                const cartItemsContainer = document.getElementById('cart-items-container');
+
+                onAuthStateChanged(auth, user => {
+                    if (user) {
+                        loginPrompt.classList.add('hidden');
+                        loadCart(user.uid);
+                    } else {
+                        cartView.classList.add('hidden');
+                        emptyCartView.classList.add('hidden');
+                        loginPrompt.classList.remove('hidden');
+                    }
+                });
+
+                function loadCart(userId) {
+                    const cartRef = doc(db, "carts", userId); // Cart users ke hisab se save hota hai
+                    
+                    onSnapshot(cartRef, async (cartSnap) => {
+                        if (!cartSnap.exists() || cartSnap.data().items.length === 0) {
+                            cartView.classList.add('hidden');
+                            emptyCartView.classList.remove('hidden');
+                            return;
+                        }
+
+                        cartView.classList.remove('hidden');
+                        emptyCartView.classList.add('hidden');
+                        
+                        const cartItems = cartSnap.data().items;
+                        cartItemsContainer.innerHTML = '<div class="p-8 text-center text-gray-500"><div class="animate-pulse">Loading cart items...</div></div>';
+
+                        let fetchedItemsHTML = '';
+                        let totalMRP = 0;
+                        let totalAmount = 0;
+                        let totalItems = 0;
+
+                        for (const item of cartItems) {
+                            // Fetch product from the dynamic collection
+                            const productRef = doc(db, dynamicCollection, item.productId);
+                            const productSnap = await getDoc(productRef);
+                            
+                            if (productSnap.exists()) {
+                                const product = productSnap.data();
+                                totalMRP += product.originalPrice * item.quantity;
+                                totalAmount += product.price * item.quantity;
+                                totalItems += item.quantity;
+
+                                fetchedItemsHTML += `
+                                    <div class="p-4 border-b flex flex-col sm:flex-row gap-4 hover:bg-gray-50 transition-colors">
+                                        <div class="flex-shrink-0 flex justify-center">
+                                            <a href="product.html?id=${item.productId}">
+                                                <img src="${product.homeImage}" class="w-24 h-24 object-contain mix-blend-multiply">
+                                            </a>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <a href="product.html?id=${item.productId}" class="font-semibold text-sm text-gray-800 hover:text-blue-600 line-clamp-2">${product.title}</a>
+                                            <div class="flex items-center gap-2 mt-2">
+                                                <p class="font-bold text-gray-900">₹${product.price}</p>
+                                                <p class="text-gray-500 line-through text-xs">₹${product.originalPrice}</p>
+                                                <p class="text-green-600 font-semibold text-xs">${product.discount}</p>
+                                            </div>
+                                            <div class="flex items-center gap-4 mt-4">
+                                                <div class="flex items-center gap-3">
+                                                    <button data-action="decrease" data-id="${item.productId}" class="quantity-btn">-</button>
+                                                    <span class="border px-4 py-1 bg-white">${item.quantity}</span>
+                                                    <button data-action="increase" data-id="${item.productId}" class="quantity-btn">+</button>
+                                                </div>
+                                                <button data-action="remove" data-id="${item.productId}" class="font-bold text-sm text-gray-700 hover:text-red-500 transition-colors">REMOVE</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        }
+                        
+                        cartItemsContainer.innerHTML = fetchedItemsHTML;
+                        
+                        // Update price details
+                        document.getElementById('total-items').textContent = totalItems;
+                        document.getElementById('total-mrp').textContent = `₹${totalMRP.toLocaleString('en-IN')}`;
+                        document.getElementById('total-amount').textContent = `₹${totalAmount.toLocaleString('en-IN')}`;
+                        const discount = totalMRP - totalAmount;
+                        document.getElementById('total-discount').textContent = `- ₹${discount.toLocaleString('en-IN')}`;
+                        document.getElementById('savings-message').textContent = `You will save ₹${discount.toLocaleString('en-IN')} on this order`;
+                    });
+                }
+                
+                // Handle cart actions (remove, increase, decrease)
+                cartItemsContainer.addEventListener('click', async (e) => {
+                    const action = e.target.getAttribute('data-action');
+                    const productId = e.target.getAttribute('data-id');
+                    const user = auth.currentUser;
+
+                    if (!action || !productId || !user) return;
+                    
+                    // Add slight visual feedback during processing
+                    e.target.style.opacity = '0.5';
+                    
+                    const cartRef = doc(db, "carts", user.uid);
+                    const cartSnap = await getDoc(cartRef);
+                    let cartItems = cartSnap.data().items;
+                    const itemInCart = cartItems.find(i => i.productId === productId);
+
+                    if (action === 'remove') {
+                        const updatedItems = cartItems.filter(i => i.productId !== productId);
+                        await updateDoc(cartRef, { items: updatedItems });
+                    }
+
+                    if (action === 'increase') {
+                        itemInCart.quantity += 1;
+                        await updateDoc(cartRef, { items: cartItems });
+                    }
+                    
+                    if (action === 'decrease') {
+                         if (itemInCart.quantity > 1) {
+                            itemInCart.quantity -= 1;
+                            await updateDoc(cartRef, { items: cartItems });
+                         } else {
+                            const updatedItems = cartItems.filter(i => i.productId !== productId);
+                            await updateDoc(cartRef, { items: updatedItems });
+                         }
+                    }
+                });
+
+            } catch (err) {
+                console.error("Cart Initialization failed:", err);
+                document.getElementById('cart-items-container').innerHTML = '<p class="p-4 text-red-500">Failed to load cart configuration.</p>';
+            }
+        }
+
+        // Initialize script
+        initCart();
+
+    </script>
+</body>
+</html>

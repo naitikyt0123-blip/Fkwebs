@@ -1,0 +1,21 @@
+# ============================================================
+#  Dockerfile — GitHub File Manager (Railway deploy)
+# ============================================================
+FROM node:20-alpine
+
+# App directory
+WORKDIR /app
+
+# Sirf package.json copy karke install (layer cache ke liye)
+COPY package.json ./
+RUN npm install --omit=dev
+
+# Baaki saara code copy
+COPY . .
+
+# Railway PORT env inject karta hai; app usko padhta hai (default 3000)
+ENV NODE_ENV=production
+EXPOSE 3000
+
+# Start
+CMD ["node", "githubflow.js"]

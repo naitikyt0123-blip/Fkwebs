@@ -1,9 +1,10 @@
 <?php
-// config.php - Securely load your PAT
-// Railway dashboard me 'GITHUB_PAT' aur 'GITHUB_USERNAME' env variables set karna
-define('GITHUB_PAT', getenv('GITHUB_PAT') ?: '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');
-define('GITHUB_USERNAME', getenv('GITHUB_USERNAME') ?: 'naitikyt0123-blip');
+// config.php
 
-// User Agent is required by GitHub API
+// Token direct file me nahi likhna hai! 
+// getenv() Railway ke variables se token uthayega.
+define('GITHUB_PAT', getenv('GITHUB_PAT'));
+define('GITHUB_USERNAME', getenv('GITHUB_USERNAME'));
+
 define('GITHUB_USER_AGENT', 'My-Private-Repo-Manager');
 ?>

@@ -8,12 +8,11 @@
     <link rel="preconnect" href="https://www.gstatic.com">
     <link rel="preconnect" href="https://firestore.googleapis.com">
     <link rel="preconnect" href="https://res.cloudinary.com">
-    <!-- firesdk.php ko turant fetch shuru karo (fast) -->
     <link rel="preload" href="firesdk.php" as="fetch" crossorigin>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f1f3f6; }
+        body { font-family: 'Inter', sans-serif; background-color: #f1f3f6; -webkit-tap-highlight-color: transparent; }
         .slider-container { position: relative; overflow: hidden; border-radius: 0.5rem; }
         .slider-wrapper { display: flex; transition: transform 0.5s ease-in-out; }
         .slider-slide { flex-shrink: 0; width: 100%; }
@@ -22,28 +21,30 @@
         .slider-dot.active { background-color: white; width: 20px; border-radius: 4px; }
         #search-suggestions { max-height: 300px; overflow-y: auto; }
 
-        /* Smooth product card entry animation */
+        /* Smooth product card entry */
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        .product-card { animation: fadeUp .4s ease both; }
-        .product-card:active { transform: scale(.97); }
+        .product-card { animation: fadeUp .35s ease both; }
+        .product-card:active { transform: scale(.97); transition: transform .1s; }
         .product-card { transition: box-shadow .25s, transform .15s; }
 
-        /* Shimmer skeleton (smooth) */
-        @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
-        .shimmer { background: linear-gradient(90deg,#eee 25%,#f5f5f5 50%,#eee 75%); background-size: 800px 100%; animation: shimmer 1.3s infinite linear; }
-
-        /* Image fade-in on load */
+        /* Smooth image load */
         .prod-img { opacity: 0; transition: opacity .4s ease; background:#fafafa; }
         .prod-img.loaded { opacity: 1; }
 
-        /* Hide scrollbar for suggestions */
+        /* Shimmer skeleton */
+        .shimmer { background: linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%); background-size: 200% 100%; animation: shimmer 1.3s infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .price-drop { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.6; } }
+
         #search-suggestions::-webkit-scrollbar { width: 4px; }
         #search-suggestions::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
     </style>
 </head>
 <body class="bg-gray-100">
 
-    <header class="bg-[#2874f0] text-white sticky top-0 z-40 shadow">
+    <header class="bg-[#2874f0] text-white sticky top-0 z-40 shadow-md">
         <div class="flex items-center gap-2 px-3 py-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
             <img src="asset/flipkart_logo.png" alt="Flipkart Logo" class="h-6 flex-shrink-0">
@@ -60,7 +61,7 @@
                     <span class="hidden sm:inline">Login</span>
                 </a>
             </div>
-             <a href="cart.html" class="flex items-center gap-1 ml-2">
+             <a href="cart.html" class="flex items-center gap-1 ml-1">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                  <span class="text-sm font-semibold hidden sm:inline">Cart</span>
             </a>
@@ -78,138 +79,97 @@
                     <img src="asset/live_now.png" alt="Live Now Sale" class="slider-slide" loading="lazy">
                     <img src="asset/realme_mobile.png" alt="Realme Mobile Offer" class="slider-slide" loading="lazy">
                     <img src="asset/perfume.png" alt="Perfume Deals" class="slider-slide" loading="lazy">
-                Perfect! Ye a</div>
+                </div>
                 <div id="slider-dots" class="slider-dots"></div>
             </div>
         </div>
 
-        <div class="flex justify-between items-center px-4 py-2apka **home page (index.html)** hai jo products display karta hai. Achh mt-2">
+        <div class="flex justify-between items-center px-4 py-2 mt-1">
             <h2 class="text-lg font-bold text-gray-800">Deals of the Day</h2>
             <div class="flex items-center space-x-2">
-                i baat ye hai ki ye already `homeImage`, `title`, `price`, `origin<span id="countdown-timer" class="text-sm text-gray-500 font-bold">10:00</span>
-                <span class="bg-red-500 text-white text-xs font-balPrice`, `discount` fields use kar raha hai — **bilkul same jold px-2 py-1 rounded animate-pulse">SALE IS LIVE</span>
+                <span id="countdown-timer" class="text-sm text-gray-600 font-bold bg-gray-200 px-2 py-0.5 rounded">10:00</span>
+                <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded price-drop">SALE IS LIVE</span>
             </div>
         </div>
 
-        <div id="product-grid" class="grid grid-co bulk CSV upload karte hain**. Matlab bulk se add kols-2 gap-1.5 p-1.5"></div>
+        <div id="product-grid" class="grid grid-cols-2 gap-1.5 p-1.5"></div>
     </main>
 
-    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t fliye products yahan **automatically dikhenge**. ✅
-
-Maex justify-around p-2 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-        <!ine ise **UI smooth + fast load + better design** -- Footer buttons -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
+        <a href="index.html" class="flex flex-col items-center text-xs text-blue-600 font-semibold">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+            Home
+        </a>
+        <a href="cart.html" class="flex flex-col items-center text-xs text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+            Cart
+        </a>
+        <a href="login.html" class="flex flex-col items-center text-xs text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            Account
+        </a>
     </footer>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejske saath update kar diya hai. Ye raha complete updated file:
-
-```html
-<!DOCTYPE html>
-<html l/9.15.0/firebase-app.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const productGrid = document.getElementById('product-grid');
         let allProducts = [];
-        let dealsTimerInterval, sliderInterval;ang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dhamaka Offer</title>
+        let dealsTimerInterval, sliderInterval;
 
-    <link rel="preconnect" href="https://www.gstatic.com">
-    <link rel="preconnect" href="https://firestore.googleapis.
-
-        // ---- Smooth shimmer skeleton ----
+        // ---- Shimmer skeleton ----
         function showSkeletons() {
             productGrid.innerHTML = Array(8).fill(
                 '<div class="bg-white rounded-md shadow p-2 flex flex-col">' +
                 '<div class="w-full h-32 rounded mb-2 shimmer"></div>' +
-                com">
-    <link rel="preconnect" href="https://res.cloudinary.com">
-    <link rel="dns-prefetch" href="https://firestore.googleapis.com">
-
-    '<div class="h-3 rounded w-5/6 mb-2 shimmer"></div>' +
-                '<div class="h-3 rounded w-1/2 mb-2 shimm<script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f1f3f6; -webkit-tap-highlight-color: transparent; }
-        .slider-container { position: relative; overflow: hidden; border-radius: 0.5rem; }er"></div>' +
+                '<div class="h-3 rounded w-5/6 mb-2 shimmer"></div>' +
+                '<div class="h-3 rounded w-1/2 mb-2 shimmer"></div>' +
                 '<div class="h-5 rounded w-1/3 shimmer"></div></div>'
             ).join('');
         }
         showSkeletons();
 
-        // ---- Config fetch turant shuru (parallel with Firebase import
-        .slider-wrapper { display: flex; transition: transform 0.5s ease-in-out; }
-        .slider-slide { flex-shrink: 0; width: 100%;) ----
+        // ---- Config fetch ----
         const configPromise = (async () => {
             const cached = sessionStorage.getItem('fk_config');
             if (cached) return JSON.parse(cached);
-            const }
-        .slider-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
-        .slider-dot { res = await fetch('firesdk.php');
+            const res = await fetch('firesdk.php');
             if (!res.ok) throw new Error('Config load nahi hua (firesdk.php).');
             const cfg = await res.json();
-            session width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255,255,255,.5); cStorage.setItem('fk_config', JSON.stringify(cfg));
+            sessionStorage.setItem('fk_config', JSON.stringify(cfg));
             return cfg;
         })();
 
         function truncateTitle(title, wordLimit) {
-            if (!title) return 'ursor: pointer; transition: .3s; }
-        .slider-dot.active { background-color: white; width: 20px; border-radius: 4px; }
-        #search-suggestions { max-height: 300px; overflow-y: auto; }
-
-        /* Smooth product card entry */
-        @';
+            if (!title) return '';
             const words = title.split(' ');
             return words.length > wordLimit ? words.slice(0, wordLimit).join(' ') + '...' : title;
         }
 
         function escapeHtml(str = '') {
-            return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', 'keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        .product-card { animation<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+            return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
         }
 
         function renderProducts(list) {
-            if (!: fadeUp .35s ease both; }
-        .product-card:active { transform: scale(.97); transition: transform .1list.length) {
-                productGrid.innerHTML = '<p class="col-span-2 text-center font-semibold p-6 text-gray-500">No products found. Add some from thes; }
-
-        /* Smooth image load */
-        .prod-img { opacity: 0; transition: opacity .4s ease; }
-        .prod-img.loaded { op Admin Panel.</p>';
+            if (!list.length) {
+                productGrid.innerHTML = '<p class="col-span-2 text-center font-semibold p-6 text-gray-500">No products found. Add some from the Admin Panel.</p>';
                 return;
             }
             productGrid.innerHTML = list.map(({ product, id }, i) => `
-                <a href="product.acity: 1; }
-
-        /* shimmer skeleton */
-        .shimmer { background: linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%); background-size: 200% 100%; animation: shimmer 1.3s infinite; }
-        html?id=${id}" class="product-card bg-white rounded-md shadow p-2 flex flex-col hover:shadow-lg" style="animation-delay:${Math.min(i * 40@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-        .price-drop { animation: pulse, 400)}ms">
-                    <div class="w-full h-32 mb-2 flex items-center justify-center overflow-hidden rounded"> 1.5s infinite; }
-        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.6; } }
+                <a href="product.html?id=${id}" class="product-card bg-white rounded-md shadow p-2 flex flex-col hover:shadow-lg" style="animation-delay:${Math.min(i * 40, 400)}ms">
+                    <div class="w-full h-32 mb-2 flex items-center justify-center overflow-hidden rounded">
                         <img src="${product.homeImage || ''}" alt="${escapeHtml(product.title)}" class="prod-img w-full h-32 object-contain" loading="lazy"
-                             
-    </style>
-</head>
-<body class="bg-gray-100">
-
-    <header class="bg-[#2874f0] text-white sticky toponload="this.classList.add('loaded')" onerror="this.src='asset/assured_logo.png';this.classList.add('loaded')">
+                             onload="this.classList.add('loaded')" onerror="this.src='asset/assured_logo.png';this.classList.add('loaded')">
                     </div>
-                    <p class="text-x-0 z-40 shadow-md">
-        <div class="flex items-center gap-2 px-3 py-2">
-            <svg xmlns="http://www.s text-gray-700 leading-tight flex-grow">${escapeHtml(truncateTitle(product.title, 7))}</p>
-                    <div class="mt-2 flexw3.org/2000/svg" class="h-6 w-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path st items-center gap-1 flex-wrap">
+                    <p class="text-xs text-gray-700 leading-tight flex-grow">${escapeHtml(truncateTitle(product.title, 7))}</p>
+                    <div class="mt-2 flex items-center gap-1 flex-wrap">
                         <span class="text-green-600 text-xs font-semibold">${escapeHtml(product.discount || '')}</span>
-                        <span class="roke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-            <img src="astext-gray-400 line-through text-xs">₹${product.originalPrice || ''}</span>
+                        <span class="text-gray-400 line-through text-xs">₹${product.originalPrice || ''}</span>
                     </div>
-                    <div class="flex items-center justify-between mt-1set/flipkart_logo.png" alt="Flipkart Logo" class="h-6">
-            <div class="relative flex-grow">
-                ">
+                    <div class="flex items-center justify-between mt-1">
                         <p class="text-sm font-bold">₹${product.price ?? ''}</p>
-                        <img src="asset/assured_logo.png" alt="Assured" class="h-4" lo<input type="text" id="search-input" placeholder="Search for Products, Brands and More" class="w-full bg-white text-blackading="lazy">
+                        <img src="asset/assured_logo.png" alt="Assured" class="h-4" loading="lazy">
                     </div>
                 </a>
             `).join('');
@@ -218,140 +178,92 @@ Maex justify-around p-2 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
         async function loadProducts() {
             try {
                 const cfg = await configPromise;
-                const text-sm rounded-md py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-300">
-                <button app = initializeApp(cfg.firebase);
+                const app = initializeApp(cfg.firebase);
                 const db = getFirestore(app);
-                const snap = await getDocs(query(collection(db, cf id="search-btn" class="absolute right-0 top-0 h-full px-3 text-gray-400">
-                    <svg xmlns="http://wwwg.collection)));
+                const snap = await getDocs(query(collection(db, cfg.collection)));
 
                 allProducts = [];
                 snap.forEach(d => allProducts.push({ id: d.id, product: d.data() }));
-                allProducts.sort((a, b) => (.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8b.product.createdAt?.seconds || 0) - (a.product.createdAt?.seconds || 0));
+                allProducts.sort((a, b) => (b.product.createdAt?.seconds || 0) - (a.product.createdAt?.seconds || 0));
 
                 renderProducts(allProducts);
-            } catch (err 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89) {
+            } catch (err) {
                 console.error("Error fetching products:", err);
-                productGrid.innerHTML = '<p class="col-span-2 text-red-500 text-center p-4">Could not load products. 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A Check firesdk.php & Firebase Security Rules.</p>';
+                productGrid.innerHTML = '<p class="col-span-2 text-red-500 text-center p-4">Could not load products. Check firesdk.php & Firebase Security Rules.</p>';
             }
         }
 
         // ---- Search filter ----
-        const searchInput = document.get6 6 0 012 8z" clip-rule="evenodd" /></svg>
-                </button>
-                <div id="search-suggestions" class="absolute top-full left-0 right-ElementById('search-input');
+        const searchInput = document.getElementById('search-input');
         const suggestionsBox = document.getElementById('search-suggestions');
 
-        function runSearch(term0 bg-white text-black rounded-b-md shadow-lg border-t border-gray-200 hidden z-50"></div>
-            </div>
-            <div id="auth-section" class="flex items-center gap-4 text-sm font-semibold">
-                 <a href="login.html" class="flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9) {
+        function runSearch(term) {
             term = term.trim().toLowerCase();
             if (!term) { renderProducts(allProducts); suggestionsBox.classList.add('hidden'); return; }
             const filtered = allProducts.filter(({ product }) => (product.title || '').toLowerCase().includes(term));
             renderProducts(filtered);
 
-            // suggestions
             const top = filtered.slice(0, 6);
             if (top.length) {
                 suggestionsBox.innerHTML = top.map(({ product, id }) => `
-                    <a href="product.html?id=${id}" class="flex items-center gap-2 p-2 hover:bg-gray-100 border-b last:border-0a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
-                    <span class="hidden sm:in">
+                    <a href="product.html?id=${id}" class="flex items-center gap-2 p-2 hover:bg-gray-100 border-b last:border-0">
                         <img src="${product.homeImage || ''}" class="w-8 h-8 object-contain" loading="lazy">
-                        <span class="text-sline">Login</span>
-                </a>
-            </div>
-             <a href="cart.html" class="flex items-center gap-1 ml-1">
-                <svg xmlns="http://www.wm truncate">${escapeHtml(product.title)}</span>
+                        <span class="text-sm truncate">${escapeHtml(product.title)}</span>
                     </a>`).join('');
                 suggestionsBox.classList.remove('hidden');
-            3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-lin} else { suggestionsBox.classList.add('hidden'); }
+            } else { suggestionsBox.classList.add('hidden'); }
         }
 
-        searchInput?.addEventListener('input', (ejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13e) => runSearch(e.target.value));
-        document.getElementById('search-btn')?.addEventListener('click', () => { suggestionsBox.classList.add('hidden'L5.4 5M7 13l-2.293 2.293c-.63.63-.184 ); });
+        searchInput?.addEventListener('input', (e) => runSearch(e.target.value));
+        document.getElementById('search-btn')?.addEventListener('click', () => { suggestionsBox.classList.add('hidden'); });
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('#search-input') && !e.target.closest('#search-suggestions')) suggestion1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0sBox.classList.add('hidden');
+            if (!e.target.closest('#search-input') && !e.target.closest('#search-suggestions')) suggestionsBox.classList.add('hidden');
         });
 
         // ---- Deals timer ----
         function startDealsTimer() {
             clearInterval(dealsTimerInterval);
-            const el 11-4 0 2 2 0 014 0z" /></svg>
-                 <span class="text-sm font-semibold hidden sm:inline">Cart</span> = document.getElementById('countdown-timer');
+            const el = document.getElementById('countdown-timer');
             if (!el) return;
             let t = 600;
             dealsTimerInterval = setInterval(() => {
-                if (t <= 
-            </a>
-        </div>
-        <div class="bg-white shadow-md">
-            <img src="asset/fashion.png" alt="Product Categories" class="w-full" loading="lazy0) { clearInterval(dealsTimerInterval); el.textContent = "00:00"; return; }
+                if (t <= 0) { clearInterval(dealsTimerInterval); el.textContent = "00:00"; return; }
                 t--;
-                el.textContent = `${String(Math.floor(t">
-        </div>
-    </header>
-
-    <main class="container mx-auto pb-16">
-        <div class="p-1.5">
-            <div class="slider-container">
-                 / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+                el.textContent = `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
             }, 1000);
         }
 
-        // ---- Banner sl<div id="slider-wrapper" class="slider-wrapper">
-                    <img src="asset/sale-banner.png" alt="Big End of Seasonider (smooth auto) ----
+        // ---- Banner slider (smooth auto) ----
         function startBannerSlider() {
             const wrapper = document.getElementById('slider-wrapper');
-            const dotsB Sale" class="slider-slide">
-                    <img src="asset/live_now.png" alt="Live Now Sale" class="slider-slide" loading="lazy">
-                    <img src="assetox = document.getElementById('slider-dots');
+            const dotsBox = document.getElementById('slider-dots');
             if (!wrapper) return;
             const slides = wrapper.children.length;
-            let cur = 0;/realme_mobile.png" alt="Realme Mobile Offer" class="slider-slide" loading="lazy">
-                    <img src="asset/perfume.png" alt="
+            let cur = 0;
 
             dotsBox.innerHTML = Array.from({ length: slides }, (_, i) =>
-                `<div class="slider-dot ${i === 0 ?Perfume Deals" class="slider-slide" loading="lazy">
-                </div>
-                <div id="slider-dots" class="slider-dots"></div>
-            </div>
-        </div>
-
-        <div 'active' : ''}" data-i="${i}"></div>`).join('');
+                `<div class="slider-dot ${i === 0 ? 'active' : ''}" data-i="${i}"></div>`).join('');
             const dots = dotsBox.querySelectorAll('.slider-dot');
 
             function go(i) {
                 cur = (i + slides) % slides;
                 wrapper.style.transform = `translateX(-${cur * 100}%)`;
-                 class="flex justify-between items-center px-4 py-2 mt-1">
-            <h2 class="text-lg font-bold text-gray-800">Deals of the Day</h2>
-            <div class="flex items-center space-x-2">
-                <span id="countdown-timer" class="text-sm text-gray-600 font-bold bdots.forEach((d, k) => d.classList.toggle('active', k === cur));
+                dots.forEach((d, k) => d.classList.toggle('active', k === cur));
             }
-            dots.forEach(d => d.addEventListener('clickg-gray-200 px-2 py-0.5 rounded">10:00</span>
-                <span class="bg-red-500 text-white text-xs font-bold px-2 py-1', () => { go(+d.dataset.i); reset(); }));
+            dots.forEach(d => d.addEventListener('click', () => { go(+d.dataset.i); reset(); }));
 
-            function reset() { clearInterval(sliderInterval); sliderInterval = rounded price-drop">SALE IS LIVE</span>
-            </div>
-        </div>
-
-        <div id="product-grid" class="grid grid-cols-2 gap-1 setInterval(() => go(cur + 1), 3500); }
+            function reset() { clearInterval(sliderInterval); sliderInterval = setInterval(() => go(cur + 1), 3500); }
             reset();
         }
 
         function initializePage() {
             loadProducts();
             startDealsTimer();
-            .5 p-1.5"></div>
-    </main>
-
-    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around pstartBannerSlider();
+            startBannerSlider();
         }
 
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initializePage);
         else initializePage();
-    -2 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
-        <a href="</script>
+    </script>
 </body>
 </html>

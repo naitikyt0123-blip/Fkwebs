@@ -5,32 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dhamaka Offer</title>
 
-    <!-- Firebase SDK ko pehle se connect karo -> fast -->
     <link rel="preconnect" href="https://www.gstatic.com">
     <link rel="preconnect" href="https://firestore.googleapis.com">
+    <link rel="preconnect" href="https://res.cloudinary.com">
+    <!-- firesdk.php ko turant fetch shuru karo (fast) -->
+    <link rel="preload" href="firesdk.php" as="fetch" crossorigin>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <style type="text/css">@font-face {font-family:Inter;font-style:normal;font-weight:400;src:url(/cf-fonts/v/inter/5.2.8/greek-ext/wght/normal.woff2);unicode-range:U+1F00-1FFF;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:400;src:url(/cf-fonts/v/inter/5.2.8/cyrillic/wght/normal.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:400;src:url(/cf-fonts/v/inter/5.2.8/latin/wght/normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:400;src:url(/cf-fonts/v/inter/5.2.8/latin-ext/wght/normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:400;src:url(/cf-fonts/v/inter/5.2.8/vietnamese/wght/normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:400;src:url(/cf-fonts/v/inter/5.2.8/greek/wght/normal.woff2);unicode-range:U+0370-0377,U+037A-037F,U+0384-038A,U+038C,U+038E-03A1,U+03A3-03FF;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:400;src:url(/cf-fonts/v/inter/5.2.8/cyrillic-ext/wght/normal.woff2);unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:500;src:url(/cf-fonts/v/inter/5.2.8/cyrillic/wght/normal.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:500;src:url(/cf-fonts/v/inter/5.2.8/cyrillic-ext/wght/normal.woff2);unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:500;src:url(/cf-fonts/v/inter/5.2.8/greek-ext/wght/normal.woff2);unicode-range:U+1F00-1FFF;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:500;src:url(/cf-fonts/v/inter/5.2.8/vietnamese/wght/normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:500;src:url(/cf-fonts/v/inter/5.2.8/latin/wght/normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:500;src:url(/cf-fonts/v/inter/5.2.8/latin-ext/wght/normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:500;src:url(/cf-fonts/v/inter/5.2.8/greek/wght/normal.woff2);unicode-range:U+0370-0377,U+037A-037F,U+0384-038A,U+038C,U+038E-03A1,U+03A3-03FF;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:600;src:url(/cf-fonts/v/inter/5.2.8/latin/wght/normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:600;src:url(/cf-fonts/v/inter/5.2.8/latin-ext/wght/normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:600;src:url(/cf-fonts/v/inter/5.2.8/vietnamese/wght/normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:600;src:url(/cf-fonts/v/inter/5.2.8/cyrillic-ext/wght/normal.woff2);unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:600;src:url(/cf-fonts/v/inter/5.2.8/greek/wght/normal.woff2);unicode-range:U+0370-0377,U+037A-037F,U+0384-038A,U+038C,U+038E-03A1,U+03A3-03FF;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:600;src:url(/cf-fonts/v/inter/5.2.8/greek-ext/wght/normal.woff2);unicode-range:U+1F00-1FFF;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:600;src:url(/cf-fonts/v/inter/5.2.8/cyrillic/wght/normal.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:700;src:url(/cf-fonts/v/inter/5.2.8/cyrillic/wght/normal.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:700;src:url(/cf-fonts/v/inter/5.2.8/cyrillic-ext/wght/normal.woff2);unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:700;src:url(/cf-fonts/v/inter/5.2.8/greek/wght/normal.woff2);unicode-range:U+0370-0377,U+037A-037F,U+0384-038A,U+038C,U+038E-03A1,U+03A3-03FF;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:700;src:url(/cf-fonts/v/inter/5.2.8/greek-ext/wght/normal.woff2);unicode-range:U+1F00-1FFF;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:700;src:url(/cf-fonts/v/inter/5.2.8/latin/wght/normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:700;src:url(/cf-fonts/v/inter/5.2.8/latin-ext/wght/normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:Inter;font-style:normal;font-weight:700;src:url(/cf-fonts/v/inter/5.2.8/vietnamese/wght/normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}</style>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f1f3f6; }
-        .slider-container { position: relative; overflow: hidden; border-radius: 0.375rem; }
+        .slider-container { position: relative; overflow: hidden; border-radius: 0.5rem; }
         .slider-wrapper { display: flex; transition: transform 0.5s ease-in-out; }
         .slider-slide { flex-shrink: 0; width: 100%; }
         .slider-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
-        .slider-dot { width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: background-color 0.3s; }
-        .slider-dot.active { background-color: white; }
+        .slider-dot { width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255,255,255,.5); cursor: pointer; transition: .3s; }
+        .slider-dot.active { background-color: white; width: 20px; border-radius: 4px; }
         #search-suggestions { max-height: 300px; overflow-y: auto; }
+
+        /* Smooth product card entry animation */
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .product-card { animation: fadeUp .4s ease both; }
+        .product-card:active { transform: scale(.97); }
+        .product-card { transition: box-shadow .25s, transform .15s; }
+
+        /* Shimmer skeleton (smooth) */
+        @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+        .shimmer { background: linear-gradient(90deg,#eee 25%,#f5f5f5 50%,#eee 75%); background-size: 800px 100%; animation: shimmer 1.3s infinite linear; }
+
+        /* Image fade-in on load */
+        .prod-img { opacity: 0; transition: opacity .4s ease; background:#fafafa; }
+        .prod-img.loaded { opacity: 1; }
+
+        /* Hide scrollbar for suggestions */
+        #search-suggestions::-webkit-scrollbar { width: 4px; }
+        #search-suggestions::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
     </style>
 </head>
 <body class="bg-gray-100">
 
-    <header class="bg-[#2874f0] text-white">
+    <header class="bg-[#2874f0] text-white sticky top-0 z-40 shadow">
         <div class="flex items-center gap-2 px-3 py-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-            <img src="asset/flipkart_logo.png" alt="Flipkart Logo" class="h-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            <img src="asset/flipkart_logo.png" alt="Flipkart Logo" class="h-6 flex-shrink-0">
             <div class="relative flex-grow">
-                <input type="text" id="search-input" placeholder="Search for Products, Brands and More" class="w-full bg-white text-black text-sm rounded-md py-2 pl-4 pr-10 focus:outline-none">
-                <button id="search-btn" class="absolute right-0 top-0 h-full px-3 text-gray-400">
+                <input type="text" id="search-input" placeholder="Search for Products, Brands and More" class="w-full bg-white text-black text-sm rounded-md py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-300 transition">
+                <button id="search-btn" class="absolute right-0 top-0 h-full px-3 text-blue-500">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
                 </button>
                 <div id="search-suggestions" class="absolute top-full left-0 right-0 bg-white text-black rounded-b-md shadow-lg border-t border-gray-200 hidden z-50"></div>
@@ -38,12 +57,12 @@
             <div id="auth-section" class="flex items-center gap-4 text-sm font-semibold">
                  <a href="login.html" class="flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
-                    <span>Login</span>
+                    <span class="hidden sm:inline">Login</span>
                 </a>
             </div>
              <a href="cart.html" class="flex items-center gap-1 ml-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                 <span class="text-sm font-semibold">Cart</span>
+                 <span class="text-sm font-semibold hidden sm:inline">Cart</span>
             </a>
         </div>
         <div class="bg-white shadow-md">
@@ -52,159 +71,287 @@
     </header>
 
     <main class="container mx-auto pb-16">
-        <div class="p-1">
+        <div class="p-1.5">
             <div class="slider-container">
                 <div id="slider-wrapper" class="slider-wrapper">
                     <img src="asset/sale-banner.png" alt="Big End of Season Sale" class="slider-slide">
                     <img src="asset/live_now.png" alt="Live Now Sale" class="slider-slide" loading="lazy">
                     <img src="asset/realme_mobile.png" alt="Realme Mobile Offer" class="slider-slide" loading="lazy">
                     <img src="asset/perfume.png" alt="Perfume Deals" class="slider-slide" loading="lazy">
+                Perfect! Ye a</div>
+                <div id="slider-dots" class="slider-dots"></div>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center px-4 py-2apka **home page (index.html)** hai jo products display karta hai. Achh mt-2">
+            <h2 class="text-lg font-bold text-gray-800">Deals of the Day</h2>
+            <div class="flex items-center space-x-2">
+                i baat ye hai ki ye already `homeImage`, `title`, `price`, `origin<span id="countdown-timer" class="text-sm text-gray-500 font-bold">10:00</span>
+                <span class="bg-red-500 text-white text-xs font-balPrice`, `discount` fields use kar raha hai — **bilkul same jold px-2 py-1 rounded animate-pulse">SALE IS LIVE</span>
+            </div>
+        </div>
+
+        <div id="product-grid" class="grid grid-co bulk CSV upload karte hain**. Matlab bulk se add kols-2 gap-1.5 p-1.5"></div>
+    </main>
+
+    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t fliye products yahan **automatically dikhenge**. ✅
+
+Maex justify-around p-2 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        <!ine ise **UI smooth + fast load + better design** -- Footer buttons -->
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejske saath update kar diya hai. Ye raha complete updated file:
+
+```html
+<!DOCTYPE html>
+<html l/9.15.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        const productGrid = document.getElementById('product-grid');
+        let allProducts = [];
+        let dealsTimerInterval, sliderInterval;ang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dhamaka Offer</title>
+
+    <link rel="preconnect" href="https://www.gstatic.com">
+    <link rel="preconnect" href="https://firestore.googleapis.
+
+        // ---- Smooth shimmer skeleton ----
+        function showSkeletons() {
+            productGrid.innerHTML = Array(8).fill(
+                '<div class="bg-white rounded-md shadow p-2 flex flex-col">' +
+                '<div class="w-full h-32 rounded mb-2 shimmer"></div>' +
+                com">
+    <link rel="preconnect" href="https://res.cloudinary.com">
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com">
+
+    '<div class="h-3 rounded w-5/6 mb-2 shimmer"></div>' +
+                '<div class="h-3 rounded w-1/2 mb-2 shimm<script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f3f6; -webkit-tap-highlight-color: transparent; }
+        .slider-container { position: relative; overflow: hidden; border-radius: 0.5rem; }er"></div>' +
+                '<div class="h-5 rounded w-1/3 shimmer"></div></div>'
+            ).join('');
+        }
+        showSkeletons();
+
+        // ---- Config fetch turant shuru (parallel with Firebase import
+        .slider-wrapper { display: flex; transition: transform 0.5s ease-in-out; }
+        .slider-slide { flex-shrink: 0; width: 100%;) ----
+        const configPromise = (async () => {
+            const cached = sessionStorage.getItem('fk_config');
+            if (cached) return JSON.parse(cached);
+            const }
+        .slider-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+        .slider-dot { res = await fetch('firesdk.php');
+            if (!res.ok) throw new Error('Config load nahi hua (firesdk.php).');
+            const cfg = await res.json();
+            session width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255,255,255,.5); cStorage.setItem('fk_config', JSON.stringify(cfg));
+            return cfg;
+        })();
+
+        function truncateTitle(title, wordLimit) {
+            if (!title) return 'ursor: pointer; transition: .3s; }
+        .slider-dot.active { background-color: white; width: 20px; border-radius: 4px; }
+        #search-suggestions { max-height: 300px; overflow-y: auto; }
+
+        /* Smooth product card entry */
+        @';
+            const words = title.split(' ');
+            return words.length > wordLimit ? words.slice(0, wordLimit).join(' ') + '...' : title;
+        }
+
+        function escapeHtml(str = '') {
+            return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', 'keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .product-card { animation<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+
+        function renderProducts(list) {
+            if (!: fadeUp .35s ease both; }
+        .product-card:active { transform: scale(.97); transition: transform .1list.length) {
+                productGrid.innerHTML = '<p class="col-span-2 text-center font-semibold p-6 text-gray-500">No products found. Add some from thes; }
+
+        /* Smooth image load */
+        .prod-img { opacity: 0; transition: opacity .4s ease; }
+        .prod-img.loaded { op Admin Panel.</p>';
+                return;
+            }
+            productGrid.innerHTML = list.map(({ product, id }, i) => `
+                <a href="product.acity: 1; }
+
+        /* shimmer skeleton */
+        .shimmer { background: linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%); background-size: 200% 100%; animation: shimmer 1.3s infinite; }
+        html?id=${id}" class="product-card bg-white rounded-md shadow p-2 flex flex-col hover:shadow-lg" style="animation-delay:${Math.min(i * 40@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .price-drop { animation: pulse, 400)}ms">
+                    <div class="w-full h-32 mb-2 flex items-center justify-center overflow-hidden rounded"> 1.5s infinite; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.6; } }
+                        <img src="${product.homeImage || ''}" alt="${escapeHtml(product.title)}" class="prod-img w-full h-32 object-contain" loading="lazy"
+                             
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <header class="bg-[#2874f0] text-white sticky toponload="this.classList.add('loaded')" onerror="this.src='asset/assured_logo.png';this.classList.add('loaded')">
+                    </div>
+                    <p class="text-x-0 z-40 shadow-md">
+        <div class="flex items-center gap-2 px-3 py-2">
+            <svg xmlns="http://www.s text-gray-700 leading-tight flex-grow">${escapeHtml(truncateTitle(product.title, 7))}</p>
+                    <div class="mt-2 flexw3.org/2000/svg" class="h-6 w-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path st items-center gap-1 flex-wrap">
+                        <span class="text-green-600 text-xs font-semibold">${escapeHtml(product.discount || '')}</span>
+                        <span class="roke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            <img src="astext-gray-400 line-through text-xs">₹${product.originalPrice || ''}</span>
+                    </div>
+                    <div class="flex items-center justify-between mt-1set/flipkart_logo.png" alt="Flipkart Logo" class="h-6">
+            <div class="relative flex-grow">
+                ">
+                        <p class="text-sm font-bold">₹${product.price ?? ''}</p>
+                        <img src="asset/assured_logo.png" alt="Assured" class="h-4" lo<input type="text" id="search-input" placeholder="Search for Products, Brands and More" class="w-full bg-white text-blackading="lazy">
+                    </div>
+                </a>
+            `).join('');
+        }
+
+        async function loadProducts() {
+            try {
+                const cfg = await configPromise;
+                const text-sm rounded-md py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                <button app = initializeApp(cfg.firebase);
+                const db = getFirestore(app);
+                const snap = await getDocs(query(collection(db, cf id="search-btn" class="absolute right-0 top-0 h-full px-3 text-gray-400">
+                    <svg xmlns="http://wwwg.collection)));
+
+                allProducts = [];
+                snap.forEach(d => allProducts.push({ id: d.id, product: d.data() }));
+                allProducts.sort((a, b) => (.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8b.product.createdAt?.seconds || 0) - (a.product.createdAt?.seconds || 0));
+
+                renderProducts(allProducts);
+            } catch (err 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89) {
+                console.error("Error fetching products:", err);
+                productGrid.innerHTML = '<p class="col-span-2 text-red-500 text-center p-4">Could not load products. 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A Check firesdk.php & Firebase Security Rules.</p>';
+            }
+        }
+
+        // ---- Search filter ----
+        const searchInput = document.get6 6 0 012 8z" clip-rule="evenodd" /></svg>
+                </button>
+                <div id="search-suggestions" class="absolute top-full left-0 right-ElementById('search-input');
+        const suggestionsBox = document.getElementById('search-suggestions');
+
+        function runSearch(term0 bg-white text-black rounded-b-md shadow-lg border-t border-gray-200 hidden z-50"></div>
+            </div>
+            <div id="auth-section" class="flex items-center gap-4 text-sm font-semibold">
+                 <a href="login.html" class="flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9) {
+            term = term.trim().toLowerCase();
+            if (!term) { renderProducts(allProducts); suggestionsBox.classList.add('hidden'); return; }
+            const filtered = allProducts.filter(({ product }) => (product.title || '').toLowerCase().includes(term));
+            renderProducts(filtered);
+
+            // suggestions
+            const top = filtered.slice(0, 6);
+            if (top.length) {
+                suggestionsBox.innerHTML = top.map(({ product, id }) => `
+                    <a href="product.html?id=${id}" class="flex items-center gap-2 p-2 hover:bg-gray-100 border-b last:border-0a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                    <span class="hidden sm:in">
+                        <img src="${product.homeImage || ''}" class="w-8 h-8 object-contain" loading="lazy">
+                        <span class="text-sline">Login</span>
+                </a>
+            </div>
+             <a href="cart.html" class="flex items-center gap-1 ml-1">
+                <svg xmlns="http://www.wm truncate">${escapeHtml(product.title)}</span>
+                    </a>`).join('');
+                suggestionsBox.classList.remove('hidden');
+            3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-lin} else { suggestionsBox.classList.add('hidden'); }
+        }
+
+        searchInput?.addEventListener('input', (ejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13e) => runSearch(e.target.value));
+        document.getElementById('search-btn')?.addEventListener('click', () => { suggestionsBox.classList.add('hidden'L5.4 5M7 13l-2.293 2.293c-.63.63-.184 ); });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#search-input') && !e.target.closest('#search-suggestions')) suggestion1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0sBox.classList.add('hidden');
+        });
+
+        // ---- Deals timer ----
+        function startDealsTimer() {
+            clearInterval(dealsTimerInterval);
+            const el 11-4 0 2 2 0 014 0z" /></svg>
+                 <span class="text-sm font-semibold hidden sm:inline">Cart</span> = document.getElementById('countdown-timer');
+            if (!el) return;
+            let t = 600;
+            dealsTimerInterval = setInterval(() => {
+                if (t <= 
+            </a>
+        </div>
+        <div class="bg-white shadow-md">
+            <img src="asset/fashion.png" alt="Product Categories" class="w-full" loading="lazy0) { clearInterval(dealsTimerInterval); el.textContent = "00:00"; return; }
+                t--;
+                el.textContent = `${String(Math.floor(t">
+        </div>
+    </header>
+
+    <main class="container mx-auto pb-16">
+        <div class="p-1.5">
+            <div class="slider-container">
+                 / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        // ---- Banner sl<div id="slider-wrapper" class="slider-wrapper">
+                    <img src="asset/sale-banner.png" alt="Big End of Seasonider (smooth auto) ----
+        function startBannerSlider() {
+            const wrapper = document.getElementById('slider-wrapper');
+            const dotsB Sale" class="slider-slide">
+                    <img src="asset/live_now.png" alt="Live Now Sale" class="slider-slide" loading="lazy">
+                    <img src="assetox = document.getElementById('slider-dots');
+            if (!wrapper) return;
+            const slides = wrapper.children.length;
+            let cur = 0;/realme_mobile.png" alt="Realme Mobile Offer" class="slider-slide" loading="lazy">
+                    <img src="asset/perfume.png" alt="
+
+            dotsBox.innerHTML = Array.from({ length: slides }, (_, i) =>
+                `<div class="slider-dot ${i === 0 ?Perfume Deals" class="slider-slide" loading="lazy">
                 </div>
                 <div id="slider-dots" class="slider-dots"></div>
             </div>
         </div>
 
-        <div class="flex justify-between items-center px-4 py-2 mt-2">
+        <div 'active' : ''}" data-i="${i}"></div>`).join('');
+            const dots = dotsBox.querySelectorAll('.slider-dot');
+
+            function go(i) {
+                cur = (i + slides) % slides;
+                wrapper.style.transform = `translateX(-${cur * 100}%)`;
+                 class="flex justify-between items-center px-4 py-2 mt-1">
             <h2 class="text-lg font-bold text-gray-800">Deals of the Day</h2>
             <div class="flex items-center space-x-2">
-                <span id="countdown-timer" class="text-sm text-gray-500 font-bold">10:00</span>
-                <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">SALE IS LIVE</span>
+                <span id="countdown-timer" class="text-sm text-gray-600 font-bold bdots.forEach((d, k) => d.classList.toggle('active', k === cur));
+            }
+            dots.forEach(d => d.addEventListener('clickg-gray-200 px-2 py-0.5 rounded">10:00</span>
+                <span class="bg-red-500 text-white text-xs font-bold px-2 py-1', () => { go(+d.dataset.i); reset(); }));
+
+            function reset() { clearInterval(sliderInterval); sliderInterval = rounded price-drop">SALE IS LIVE</span>
             </div>
         </div>
 
-        <div id="product-grid" class="grid grid-cols-2 gap-1.5 p-1.5">
-            <!-- Skeleton loaders JS se turant lag jayenge -->
-        </div>
-    </main>
-
-    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2">
-        <!-- Footer buttons... -->
-    </footer>
-
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
-
-        const productGrid = document.getElementById('product-grid');
-        let allProducts = [];
-        let dealsTimerInterval;
-        let sliderInterval;
-
-        // ---- Skeleton turant dikhao (khaali screen na dikhe) ----
-        function showSkeletons() {
-            productGrid.innerHTML = Array(8).fill(
-                '<div class="bg-white rounded-md shadow p-2 flex flex-col animate-pulse">' +
-                '<div class="w-full h-32 bg-gray-200 rounded mb-2"></div>' +
-                '<div class="h-4 bg-gray-200 rounded w-5/6 mb-2"></div>' +
-                '<div class="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>' +
-                '<div class="h-5 bg-gray-200 rounded w-1/3"></div></div>'
-            ).join('');
+        <div id="product-grid" class="grid grid-cols-2 gap-1 setInterval(() => go(cur + 1), 3500); }
+            reset();
         }
-        showSkeletons();
-
-        // ---- Config firesdk.php se lao (cache karo -> fast) ----
-        async function getConfig() {
-            const cached = sessionStorage.getItem('fk_config');
-            if (cached) return JSON.parse(cached);
-            const res = await fetch('firesdk.php');
-            if (!res.ok) throw new Error('Config load nahi hua (firesdk.php).');
-            const cfg = await res.json();
-            sessionStorage.setItem('fk_config', JSON.stringify(cfg));
-            return cfg;
-        }
-
-        function truncateTitle(title, wordLimit) {
-            const words = title.split(' ');
-            if (words.length > wordLimit) {
-                return words.slice(0, wordLimit).join(' ') + '...';
-            }
-            return title;
-        }
-
-        function renderProducts(productsToDisplay) {
-            if (productsToDisplay.length === 0) {
-                 productGrid.innerHTML = '<p class="col-span-2 text-center font-semibold p-4">No products found. Add some from the Admin Panel.</p>';
-                 return;
-            }
-            const html = productsToDisplay.map(({ product, id }) => `
-                <a href="product.html?id=${id}" class="bg-white rounded-md shadow p-2 flex flex-col hover:shadow-lg transition-shadow">
-                    <img src="${product.homeImage}" alt="${product.title}" class="w-full h-32 object-contain mb-2" loading="lazy">
-                    <p class="text-xs text-gray-700 leading-tight flex-grow">${truncateTitle(product.title, 7)}</p>
-                    <div class="mt-2">
-                        <span class="text-green-600 text-xs font-semibold">${product.discount}</span>
-                        <span class="text-gray-400 line-through text-xs">₹${product.originalPrice}</span>
-                    </div>
-                    <div class="flex items-center justify-between mt-1">
-                        <p class="text-sm font-bold">₹${product.price}</p>
-                        <img src="asset/assured_logo.png" alt="Assured" class="h-4" loading="lazy">
-                    </div>
-                </a>
-            `).join('');
-            productGrid.innerHTML = html;
-        }
-
-        async function loadProducts() {
-            try {
-                const cfg = await getConfig();
-                const app = initializeApp(cfg.firebase);
-                const db = getFirestore(app);
-
-                // Collection ka naam firesdk.php se aata hai
-                const productsRef = collection(db, cfg.collection);
-                const querySnapshot = await getDocs(query(productsRef));
-
-                allProducts = [];
-                querySnapshot.forEach((doc) => {
-                    allProducts.push({ id: doc.id, product: doc.data() });
-                });
-
-                // Naye product upar (crash-safe sorting)
-                allProducts.sort((a, b) => {
-                    const timeA = a.product.createdAt?.seconds || 0;
-                    const timeB = b.product.createdAt?.seconds || 0;
-                    return timeB - timeA;
-                });
-
-                renderProducts(allProducts);
-            } catch (error) {
-                console.error("Error fetching products: ", error);
-                productGrid.innerHTML = '<p class="col-span-2 text-red-500 text-center">Could not load products. Please check firesdk.php & Firebase Security Rules.</p>';
-            }
-        }
-
-        function startDealsTimer() {
-             clearInterval(dealsTimerInterval);
-            const countdownTimer = document.getElementById('countdown-timer');
-            if(!countdownTimer) return;
-            let timeLeft = 600;
-            dealsTimerInterval = setInterval(() => {
-                if (timeLeft <= 0) {
-                    clearInterval(dealsTimerInterval);
-                    countdownTimer.textContent = "00:00";
-                    return;
-                }
-                timeLeft--;
-                const minutes = Math.floor(timeLeft / 60);
-                const seconds = timeLeft % 60;
-                countdownTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }, 1000);
-        }
-
-        function startBannerSlider() { /* ... same as before ... */ }
 
         function initializePage() {
-            loadProducts();      // sabse pehle products (fast)
+            loadProducts();
             startDealsTimer();
-            startBannerSlider();
+            .5 p-1.5"></div>
+    </main>
+
+    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around pstartBannerSlider();
         }
 
-        // DOM already ready ho to turant chalao warna wait karo
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializePage);
-        } else {
-            initializePage();
-        }
-    </script>
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initializePage);
+        else initializePage();
+    -2 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
+        <a href="</script>
 </body>
-</html>
+            </html>

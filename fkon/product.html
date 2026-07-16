@@ -8,27 +8,44 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f1f3f6; }
-        
-        /* Smooth Slider CSS Update */
+
+        /* Smooth Slider CSS */
         .slider-container { position: relative; width: 100%; overflow: hidden; }
-        .slider-wrapper { 
-            display: flex; 
-            overflow-x: auto; 
-            scroll-snap-type: x mandatory; 
-            scroll-behavior: smooth; 
-            -ms-overflow-style: none; /* IE and Edge */
-            scrollbar-width: none; /* Firefox */
+        .slider-wrapper {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
-        .slider-wrapper::-webkit-scrollbar { display: none; } /* Chrome, Safari and Opera */
+        .slider-wrapper::-webkit-scrollbar { display: none; }
         .slider-slide { flex-shrink: 0; width: 100%; scroll-snap-align: start; }
-        
+
         .slider-btn { position: absolute; top: 50%; transform: translateY(-50%); background-color: rgba(0,0,0,0.3); color: white; border: none; padding: 0.5rem; border-radius: 50%; cursor: pointer; z-index: 10; }
         .slider-btn.prev { left: 10px; }
         .slider-btn.next { right: 10px; }
-        
+
         /* Fade-in Animation */
         .content-container { opacity: 0; transition: opacity 0.5s ease-in-out; }
         .content-container.visible { opacity: 1; }
+
+        /* Horizontal scroll for related products */
+        .related-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 12px;
+            scroll-snap-type: x proximity;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            padding-bottom: 8px;
+        }
+        .related-scroll::-webkit-scrollbar { display: none; }
+        .related-card {
+            flex: 0 0 auto;
+            width: 150px;
+            scroll-snap-align: start;
+        }
     </style>
 </head>
 <body class="bg-white">
@@ -60,7 +77,7 @@
                 <p id="product-discount" class="text-green-600 font-semibold"></p>
             </div>
             <p class="px-4 text-green-700 text-xs font-semibold mt-1">Hurry, limited time offer!</p>
-            
+
             <div class="my-3 border-t pt-2">
                 <img src="asset/inform.png" alt="Product Information" class="w-full">
             </div>
@@ -68,6 +85,14 @@
             <div id="feedback-section" class="p-4 border-t">
                 <h2 class="text-xl font-bold mb-4">Customer Images & Reviews</h2>
                 <div id="feedback-images-container" class="grid grid-cols-3 md:grid-cols-5 gap-2"></div>
+            </div>
+
+            <!-- ===== You May Also Like (Horizontal Scroll) ===== -->
+            <div id="related-section" class="p-4 border-t border-gray-200">
+                <h2 class="text-xl font-bold mb-4">You May Also Like</h2>
+                <div id="related-products-container" class="related-scroll">
+                    <!-- Related product cards load here -->
+                </div>
             </div>
         </div>
     </main>
@@ -80,20 +105,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getAuth } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp, collection, getDocs, query, limit } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-          apiKey: "AIzaSyBPh60LuPqcH58delO2xGSQN7k48wW-6YM",
-          authDomain: "lavinrent.firebaseapp.com",
-          databaseURL: "https://lavinrent-default-rtdb.firebaseio.com",
-          projectId: "lavinrent",
-          storageBucket: "lavinrent.firebasestorage.app",
-          messagingSenderId: "1070171538977",
-          appId: "1:1070171538977:web:a5f026d387328ebcfec560"
-        };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // NOTE: Ab config firesdk.php se load hota hai (hardcoded config hata diya gaya)
+        let app, auth, db, dynamicCollection;
 
         const mainContent = document.getElementById('main-content');
         const skeletonLoader = document.getElementById('skeleton-loader');
@@ -114,14 +129,12 @@
 
         async function loadProductDetails(id) {
             try {
-                // Dynamic collection fetch
-                const cfg = await getConfig();
-                const productRef = doc(db, cfg.collection, id); 
+                const productRef = doc(db, dynamicCollection, id);
                 const docSnap = await getDoc(productRef);
 
                 if (docSnap.exists()) {
                     const product = docSnap.data();
-                    
+
                     document.getElementById('product-title').textContent = product.title;
                     document.getElementById('product-price').textContent = `₹${product.price}`;
                     document.getElementById('product-original-price').textContent = `₹${product.originalPrice}`;
@@ -129,7 +142,11 @@
 
                     const sliderWrapper = document.getElementById('slider-wrapper');
                     sliderWrapper.innerHTML = '';
-                    product.featureImages.forEach(imgUrl => {
+                    // featureImages ya fallback homeImage
+                    const images = (product.featureImages && product.featureImages.length > 0)
+                        ? product.featureImages
+                        : (product.homeImage ? [product.homeImage] : []);
+                    images.forEach(imgUrl => {
                         sliderWrapper.innerHTML += `<div class="slider-slide flex items-center justify-center p-2"><img src="${imgUrl}" class="max-h-full max-w-full object-contain"></div>`;
                     });
                     setupSlider();
@@ -147,6 +164,9 @@
                     skeletonLoader.classList.add('hidden');
                     productContainer.classList.add('visible');
 
+                    // Related products load karo
+                    loadRelatedProducts(id);
+
                 } else {
                     mainContent.innerHTML = '<p class="text-center p-10 font-bold text-red-500">Sorry, this product does not exist.</p>';
                 }
@@ -155,63 +175,126 @@
                 mainContent.innerHTML = '<p class="text-center p-10 font-bold text-red-500">Could not load product details.</p>';
             }
         }
-        
+
+        // ===== Related / Other Products (Horizontal Scroll) =====
+        async function loadRelatedProducts(currentId) {
+            const container = document.getElementById('related-products-container');
+            const relatedSection = document.getElementById('related-section');
+            try {
+                const q = query(collection(db, dynamicCollection), limit(20));
+                const snap = await getDocs(q);
+
+                let html = '';
+                let count = 0;
+                snap.forEach(docItem => {
+                    // Current product ko chhod do
+                    if (docItem.id === currentId) return;
+                    const p = docItem.data();
+                    const img = p.homeImage || (p.featureImages && p.featureImages[0]) || '';
+                    count++;
+                    html += `
+                        <a href="product.html?id=${docItem.id}" class="related-card block border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                            <div class="h-32 flex items-center justify-center p-2 bg-white">
+                                <img src="${img}" class="max-h-full max-w-full object-contain mix-blend-multiply" loading="lazy">
+                            </div>
+                            <div class="p-2">
+                                <p class="text-xs text-gray-700 line-clamp-2 leading-tight h-8">${p.title || ''}</p>
+                                <div class="flex items-center gap-1 mt-1">
+                                    <span class="font-bold text-sm text-gray-900">₹${p.price ?? ''}</span>
+                                    ${p.originalPrice ? `<span class="text-gray-400 line-through text-[10px]">₹${p.originalPrice}</span>` : ''}
+                                </div>
+                                ${p.discount ? `<p class="text-green-600 text-[10px] font-semibold">${p.discount}</p>` : ''}
+                            </div>
+                        </a>
+                    `;
+                });
+
+                if (count === 0) {
+                    relatedSection.classList.add('hidden');
+                } else {
+                    container.innerHTML = html;
+                }
+            } catch (err) {
+                console.error("Error loading related products:", err);
+                relatedSection.classList.add('hidden');
+            }
+        }
+
         function setupSlider() {
             const wrapper = document.getElementById('slider-wrapper');
             const prevBtn = document.getElementById('prev-btn');
             const nextBtn = document.getElementById('next-btn');
             if (!wrapper || wrapper.children.length === 0) return;
-            
-            // Native scroll system
-            nextBtn.addEventListener('click', () => { 
-                wrapper.scrollBy({ left: wrapper.clientWidth, behavior: 'smooth' }); 
+
+            nextBtn.addEventListener('click', () => {
+                wrapper.scrollBy({ left: wrapper.clientWidth, behavior: 'smooth' });
             });
-            prevBtn.addEventListener('click', () => { 
-                wrapper.scrollBy({ left: -wrapper.clientWidth, behavior: 'smooth' }); 
+            prevBtn.addEventListener('click', () => {
+                wrapper.scrollBy({ left: -wrapper.clientWidth, behavior: 'smooth' });
             });
         }
 
-        const buyNowBtn = document.getElementById('buy-now-btn');
-        const addToCartBtn = document.getElementById('add-to-cart-btn');
+        function setupButtons() {
+            const buyNowBtn = document.getElementById('buy-now-btn');
+            const addToCartBtn = document.getElementById('add-to-cart-btn');
 
-        buyNowBtn.addEventListener('click', () => {
-            const user = auth.currentUser;
-            if (!user) { window.location.href = `login.html`; return; }
-            sessionStorage.setItem('productId', productId);
-            window.location.href = 'address.html';
-        });
+            buyNowBtn.addEventListener('click', () => {
+                const user = auth.currentUser;
+                if (!user) { window.location.href = `login.html`; return; }
+                sessionStorage.setItem('productId', productId);
+                window.location.href = 'address.html';
+            });
 
-        addToCartBtn.addEventListener('click', () => {
-            const user = auth.currentUser;
-            if (!user) { window.location.href = `login.html`; return; }
-            addToCartBtn.textContent = 'Adding...'; addToCartBtn.disabled = true;
-            const cartRef = doc(db, "carts", user.uid);
-            getDoc(cartRef).then(docSnap => {
-                const items = docSnap.exists() ? docSnap.data().items || [] : [];
-                const existingItem = items.find(item => item.productId === productId);
-                if (existingItem) {
-                    existingItem.quantity += 1;
-                    return updateDoc(cartRef, { items: items });
+            addToCartBtn.addEventListener('click', () => {
+                const user = auth.currentUser;
+                if (!user) { window.location.href = `login.html`; return; }
+                addToCartBtn.textContent = 'Adding...'; addToCartBtn.disabled = true;
+                const cartRef = doc(db, "carts", user.uid);
+                getDoc(cartRef).then(docSnap => {
+                    const items = docSnap.exists() ? docSnap.data().items || [] : [];
+                    const existingItem = items.find(item => item.productId === productId);
+                    if (existingItem) {
+                        existingItem.quantity += 1;
+                        return updateDoc(cartRef, { items: items });
+                    } else {
+                        const newItem = { productId: productId, quantity: 1 };
+                        return docSnap.exists() ? updateDoc(cartRef, { items: arrayUnion(newItem) }) : setDoc(cartRef, { userId: user.uid, items: [newItem], createdAt: serverTimestamp() });
+                    }
+                }).then(() => {
+                    alert('Product added to your cart!');
+                }).catch(error => {
+                    console.error("Error adding to cart: ", error);
+                    alert('Failed to add product to cart.');
+                }).finally(() => {
+                    addToCartBtn.textContent = 'Add to Cart';
+                    addToCartBtn.disabled = false;
+                });
+            });
+        }
+
+        // ===== Init =====
+        async function init() {
+            try {
+                const cfg = await getConfig();
+                app = initializeApp(cfg.firebase);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                dynamicCollection = cfg.collection;
+
+                setupButtons();
+
+                if (!productId) {
+                    mainContent.innerHTML = '<p class="text-center p-10 font-bold text-red-500">Error: Product ID not found.</p>';
                 } else {
-                    const newItem = { productId: productId, quantity: 1 };
-                    return docSnap.exists() ? updateDoc(cartRef, { items: arrayUnion(newItem) }) : setDoc(cartRef, { userId: user.uid, items: [newItem], createdAt: serverTimestamp() });
+                    loadProductDetails(productId);
                 }
-            }).then(() => {
-                alert('Product added to your cart!');
-            }).catch(error => {
-                console.error("Error adding to cart: ", error);
-                alert('Failed to add product to cart.');
-            }).finally(() => {
-                addToCartBtn.textContent = 'Add to Cart';
-                addToCartBtn.disabled = false;
-            });
-        });
-
-        if (!productId) {
-            mainContent.innerHTML = '<p class="text-center p-10 font-bold text-red-500">Error: Product ID not found.</p>';
-        } else {
-            loadProductDetails(productId);
+            } catch (err) {
+                console.error("Init failed:", err);
+                mainContent.innerHTML = '<p class="text-center p-10 font-bold text-red-500">Failed to load configuration.</p>';
+            }
         }
+
+        init();
     </script>
 </body>
 </html>

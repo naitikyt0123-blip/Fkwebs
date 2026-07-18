@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
+    <title>Fungus Admin — Pro</title>
     <link rel="preconnect" href="https://www.gstatic.com">
     <link rel="preconnect" href="https://firestore.googleapis.com">
     <link rel="preconnect" href="https://api.cloudinary.com">
@@ -13,24 +13,50 @@
         #sidebar { transition: transform 0.3s ease-in-out; }
         #sidebar-overlay { transition: opacity 0.3s ease-in-out; }
         .sidebar-open { transform: translateX(0) !important; }
-        .nav-link.active { background: linear-gradient(90deg,#2563eb,#3b82f6); color: white; box-shadow: 0 4px 12px rgba(37,99,235,.35); }
-        .card { background:#fff; border-radius:1rem; box-shadow:0 10px 30px -12px rgba(0,0,0,.15); }
+
+        .nav-link.active { background: linear-gradient(90deg,#6366f1,#8b5cf6); color: white; box-shadow: 0 6px 18px rgba(99,102,241,.45); }
+        .card { background:#fff; border-radius:1.25rem; box-shadow:0 12px 40px -14px rgba(0,0,0,.18); }
+
         .field { transition: box-shadow .2s, border-color .2s; }
-        .field:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.25); }
-        .file-drop { border:2px dashed #cbd5e1; border-radius:.75rem; transition:.2s; cursor:pointer; }
-        .file-drop:hover { border-color:#3b82f6; background:#f8fafc; }
-        .btn-primary { background:linear-gradient(90deg,#2563eb,#3b82f6); transition:.2s; }
-        .btn-primary:hover { box-shadow:0 8px 20px -6px rgba(37,99,235,.6); transform:translateY(-1px); }
+        .field:focus { outline:none; border-color:#8b5cf6; box-shadow:0 0 0 3px rgba(139,92,246,.25); }
+
+        .file-drop { border:2px dashed #cbd5e1; border-radius:1rem; transition:.25s; cursor:pointer; }
+        .file-drop:hover { border-color:#8b5cf6; background:#faf5ff; transform: translateY(-2px); }
+
+        .btn-primary { background:linear-gradient(90deg,#6366f1,#8b5cf6,#d946ef); background-size:200% auto; transition:.4s; }
+        .btn-primary:hover { background-position:right center; box-shadow:0 10px 26px -8px rgba(139,92,246,.7); transform:translateY(-1px); }
+
         #toast { transition:opacity .3s, transform .3s; }
+
         @keyframes typing { from { width: 0 } to { width: 100% } }
-        @keyframes blink-caret { from, to { border-color: transparent } 50% { border-color: #3b82f6; } }
-        #welcome-text { overflow:hidden; white-space:nowrap; animation: typing 3s steps(40,end), blink-caret .75s step-end infinite; border-right:.15em solid #3b82f6; max-width:100%; }
+        @keyframes blink-caret { from, to { border-color: transparent } 50% { border-color: #8b5cf6; } }
+        #welcome-text { overflow:hidden; white-space:nowrap; animation: typing 3s steps(40,end), blink-caret .75s step-end infinite; border-right:.15em solid #8b5cf6; max-width:100%; }
+
         .log-line { font-family: monospace; font-size: 12px; }
+
+        /* animated gradient bg for sidebar brand */
+        .brand-glow { background: linear-gradient(135deg,#6366f1,#d946ef); -webkit-background-clip:text; background-clip:text; color:transparent; }
+
+        /* stat cards */
+        .stat { border-radius:1rem; color:#fff; padding:1rem 1.25rem; }
+
+        /* row fade-in */
+        @keyframes rowIn { from { opacity:0; transform:translateY(8px);} to {opacity:1; transform:none;} }
+        .row-anim { animation: rowIn .3s ease both; }
+
+        /* preview card remove hover */
+        .rm-x { transition:.15s; }
+        .rm-x:hover { transform:scale(1.2); }
+
+        .modal-bg { background: rgba(15,23,42,.6); backdrop-filter: blur(3px); }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background:#c7cdd6; border-radius:8px; }
     </style>
 </head>
-<body class="bg-slate-100">
+<body class="bg-gradient-to-br from-slate-100 to-indigo-50 min-h-screen">
 
-    <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 opacity-0 pointer-events-none px-5 py-3 rounded-xl text-white font-semibold shadow-lg"></div>
+    <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] opacity-0 pointer-events-none px-5 py-3 rounded-xl text-white font-semibold shadow-lg"></div>
     <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
 
     <div class="relative min-h-screen md:flex">
@@ -38,8 +64,8 @@
         <aside id="sidebar" class="bg-slate-900 text-slate-100 w-64 py-6 px-3 absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 z-40 flex flex-col">
             <div class="flex items-center justify-between px-2 mb-6">
                 <div class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                    <span class="text-xl font-extrabold">Fungus Admin</span>
+                    <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-fuchsia-500 flex items-center justify-center font-black text-lg">F</div>
+                    <span class="text-xl font-extrabold brand-glow">Fungus Admin</span>
                 </div>
                 <button id="close-menu-btn" class="md:hidden p-1 rounded hover:bg-slate-700">
                      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -48,7 +74,7 @@
 
             <div class="mx-2 mb-4 px-3 py-2 rounded-lg bg-slate-800 text-xs">
                 <span class="text-slate-400">Active Store:</span>
-                <span id="store-badge" class="font-bold text-blue-300">…</span>
+                <span id="store-badge" class="font-bold text-fuchsia-300">…</span>
             </div>
 
             <nav class="space-y-1">
@@ -69,11 +95,13 @@
                     <span>QR &amp; UPI Settings</span>
                 </a>
             </nav>
+
+            <div class="mt-auto text-[11px] text-slate-500 px-3">v2.0 • Smart Bulk Engine</div>
         </aside>
 
         <!-- MAIN -->
         <div class="flex-1 flex flex-col min-w-0">
-            <header class="bg-white shadow-sm p-4 flex items-center gap-3 sticky top-0 z-20">
+            <header class="bg-white/80 backdrop-blur shadow-sm p-4 flex items-center gap-3 sticky top-0 z-20">
                 <button id="menu-btn" class="text-slate-600 md:hidden p-1 rounded hover:bg-slate-100">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                 </button>
@@ -86,6 +114,20 @@
                     <div class="card p-6 md:p-10 text-center">
                         <h1 id="welcome-text" class="text-2xl md:text-4xl font-bold inline-block mx-auto">Welcome to Fungus Admin</h1>
                         <p class="mt-4 text-slate-500">Select an option from the menu to get started.</p>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-8 max-w-2xl mx-auto">
+                            <div class="stat bg-gradient-to-br from-indigo-500 to-indigo-600">
+                                <p class="text-xs opacity-80">Total Products</p>
+                                <p id="stat-total" class="text-2xl font-extrabold">…</p>
+                            </div>
+                            <div class="stat bg-gradient-to-br from-fuchsia-500 to-pink-600">
+                                <p class="text-xs opacity-80">Smart CSV</p>
+                                <p class="text-2xl font-extrabold">ON</p>
+                            </div>
+                            <div class="stat bg-gradient-to-br from-emerald-500 to-teal-600 col-span-2 md:col-span-1">
+                                <p class="text-xs opacity-80">Auto Pricing</p>
+                                <p class="text-2xl font-extrabold">Active</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -100,7 +142,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-slate-600 mb-1">Selling Price (₹)</label>
-                                <input id="price" type="number" placeholder="e.g. 499" class="field w-full p-3 border border-slate-300 rounded-lg" required>
+                                <input id="price" type="number" placeholder="e.g. 149" class="field w-full p-3 border border-slate-300 rounded-lg" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-slate-600 mb-1">Original Price (₹)</label>
@@ -116,7 +158,6 @@
                             <div>
                                 <label class="block text-sm font-semibold text-slate-600 mb-2">Home Image <span class="text-slate-400 font-normal">(1 image — main page)</span></label>
                                 <label class="file-drop flex items-center justify-center gap-2 p-4 text-slate-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.9A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                                     <span id="homeImage-text">Tap to choose home image</span>
                                     <input id="homeImage" type="file" class="hidden" required accept="image/*">
                                 </label>
@@ -124,7 +165,6 @@
                             <div>
                                 <label class="block text-sm font-semibold text-slate-600 mb-2">Feature Images <span class="text-slate-400 font-normal">(product slider)</span></label>
                                 <label class="file-drop flex items-center justify-center gap-2 p-4 text-slate-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                     <span id="featureImages-text">Tap to choose multiple images</span>
                                     <input id="featureImages" type="file" class="hidden" required multiple accept="image/*">
                                 </label>
@@ -132,7 +172,6 @@
                             <div>
                                 <label class="block text-sm font-semibold text-slate-600 mb-2">Feedback Images <span class="text-slate-400 font-normal">(reviews — optional)</span></label>
                                 <label class="file-drop flex items-center justify-center gap-2 p-4 text-slate-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
                                     <span id="feedbackImages-text">Tap to choose multiple images</span>
                                     <input id="feedbackImages" type="file" class="hidden" multiple accept="image/*">
                                 </label>
@@ -145,37 +184,50 @@
 
                 <!-- BULK UPLOAD -->
                 <section id="bulk-upload-section" class="hidden">
-                    <div class="card p-5 md:p-7 max-w-3xl mx-auto">
-                        <h2 class="text-lg font-bold text-slate-800 mb-1">Bulk Upload Products (CSV)</h2>
-                        <p class="text-sm text-slate-500 mb-5">Ek saath 10+ products add karo. Images URL se direct add hongi (download ki zarurat nahi).</p>
+                    <div class="card p-5 md:p-7 max-w-4xl mx-auto">
+                        <h2 class="text-lg font-bold text-slate-800 mb-1">Bulk Upload Products (CSV) 🚀</h2>
+                        <p class="text-sm text-slate-500 mb-5">Ek saath <b>10 tak CSV files</b> select karo. Sab merge ho jaayengi. Upload se pehle list me se koi bhi product hata sakte ho.</p>
 
-                        <!-- Instructions -->
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-5 text-sm text-slate-700">
-                            <p class="font-semibold text-blue-700 mb-2">Smart CSV Upload — koi bhi format chalega ✓</p>
-                            <p class="text-xs mb-2">Ye columns automatically detect ho jaate hain (naam kuch bhi ho):</p>
-                            <code class="block bg-white p-2 rounded text-xs overflow-x-auto whitespace-nowrap">Product Name / title, Price, Image (JSON array ya pipe |), MRP, Discount</code>
-                            <ul class="list-disc pl-5 mt-2 space-y-1 text-xs">
-                                <li><b>Image</b> = <code>["url1","url2","url3"]</code> ya pipe <code>|</code> — pehli image auto <b>Home Image</b> ban jaati hai</li>
-                                <li><b>Price</b> = <code>₹521</code> / <code>1,299</code> — symbol/comma auto hat jaata hai</li>
-                                <li><b>MRP / Discount</b> na ho to <b>auto-calculate</b> ho jaata hai</li>
-                            </ul>
-                            <button id="download-sample" class="mt-3 text-blue-600 font-semibold text-xs underline">⬇ Download Sample CSV</button>
+                        <!-- Auto pricing info -->
+                        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 mb-4 text-sm text-slate-700">
+                            <p class="font-semibold text-emerald-700 mb-2">💰 Auto Selling Price Rules (MRP ke hisaab se)</p>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                                <div class="bg-white rounded-lg p-2 text-center">≤ ₹500 → <b class="text-emerald-600">₹99</b></div>
+                                <div class="bg-white rounded-lg p-2 text-center">≤ ₹1000 → <b class="text-emerald-600">₹149</b></div>
+                                <div class="bg-white rounded-lg p-2 text-center">≤ ₹2000 → <b class="text-emerald-600">₹199</b></div>
+                                <div class="bg-white rounded-lg p-2 text-center">&gt; ₹2000 → <b class="text-emerald-600">₹299</b></div>
+                            </div>
                         </div>
 
-                        <!-- File input -->
+                        <!-- Instructions -->
+                        <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-5 text-sm text-slate-700">
+                            <p class="font-semibold text-indigo-700 mb-2">Smart CSV — koi bhi format chalega ✓</p>
+                            <code class="block bg-white p-2 rounded text-xs overflow-x-auto whitespace-nowrap">Product Name / title, Price, Image (JSON array ya pipe |), MRP, Discount</code>
+                            <button id="download-sample" class="mt-3 text-indigo-600 font-semibold text-xs underline">⬇ Download Sample CSV</button>
+                        </div>
+
+                        <!-- File input (MULTIPLE) -->
                         <label class="file-drop flex flex-col items-center justify-center gap-2 p-6 text-slate-500 mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.9A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-                            <span id="csvFile-text" class="font-semibold">Tap to choose CSV file</span>
-                            <input id="csvFile" type="file" class="hidden" accept=".csv,text/csv">
+                            <span id="csvFile-text" class="font-semibold">Tap to choose up to 10 CSV files</span>
+                            <input id="csvFile" type="file" class="hidden" accept=".csv,text/csv" multiple>
                         </label>
 
                         <!-- Preview -->
                         <div id="csv-preview" class="hidden mb-4">
-                            <p class="text-sm font-semibold text-slate-700 mb-2">Preview (<span id="csv-count">0</span> products):</p>
-                            <div class="overflow-x-auto border border-slate-200 rounded-lg max-h-64 overflow-y-auto">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-sm font-semibold text-slate-700">Preview (<span id="csv-count">0</span> products)</p>
+                                <button id="clear-all-btn" class="text-xs text-red-500 font-semibold hover:underline">Clear All</button>
+                            </div>
+                            <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-80 overflow-y-auto">
                                 <table class="w-full text-xs">
                                     <thead class="bg-slate-100 sticky top-0"><tr>
-                                        <th class="p-2 text-left">Title</th><th class="p-2 text-left">Price</th><th class="p-2 text-left">Discount</th><th class="p-2 text-left">Imgs</th>
+                                        <th class="p-2 text-left">Img</th>
+                                        <th class="p-2 text-left">Title</th>
+                                        <th class="p-2 text-left">Sell</th>
+                                        <th class="p-2 text-left">MRP</th>
+                                        <th class="p-2 text-left">Disc</th>
+                                        <th class="p-2 text-center">✕</th>
                                     </tr></thead>
                                     <tbody id="csv-preview-body"></tbody>
                                 </table>
@@ -185,13 +237,14 @@
                         <button id="bulk-upload-btn" class="btn-primary w-full text-white font-bold py-3 px-4 rounded-lg disabled:opacity-50" disabled>Upload All Products (Live)</button>
 
                         <!-- Progress log -->
-                        <div id="bulk-log" class="hidden mt-5 bg-slate-900 text-slate-100 rounded-lg p-3 max-h-56 overflow-y-auto space-y-1"></div>
+                        <div id="bulk-log" class="hidden mt-5 bg-slate-900 text-slate-100 rounded-xl p-3 max-h-56 overflow-y-auto space-y-1"></div>
                     </div>
                 </section>
 
                 <!-- MANAGE -->
                 <section id="manage-products-section" class="hidden">
                     <div class="card p-4 md:p-6">
+                        <input id="manage-search" type="text" placeholder="🔍 Search products…" class="field w-full p-3 border border-slate-300 rounded-lg mb-4">
                         <div id="product-list" class="space-y-3"><p class="text-slate-500">Loading products…</p></div>
                     </div>
                 </section>
@@ -221,10 +274,42 @@
         </div>
     </div>
 
+    <!-- EDIT MODAL -->
+    <div id="edit-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-bg p-4">
+        <div class="card p-6 w-full max-w-md">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Edit Product</h3>
+            <input type="hidden" id="edit-id">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Title</label>
+                    <input id="edit-title" class="field w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Selling Price ₹</label>
+                        <input id="edit-price" type="number" class="field w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Original ₹</label>
+                        <input id="edit-original" type="number" class="field w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Discount Text</label>
+                    <input id="edit-discount" class="field w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                </div>
+            </div>
+            <div class="flex gap-2 mt-5">
+                <button id="edit-cancel" class="flex-1 py-2.5 rounded-lg border border-slate-300 font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                <button id="edit-save" class="flex-1 btn-primary text-white py-2.5 rounded-lg font-bold">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc, getDoc, setDoc, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc, getDoc, setDoc, updateDoc, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const CLOUDINARY_CLOUD_NAME = "dz7l2s7pj";
         const CLOUDINARY_UPLOAD_PRESET = "flipkart_own";
@@ -295,6 +380,14 @@
             return results.map(r => r.secure_url);
         }
 
+        // ====== AUTO SELLING PRICE RULE ======
+        function autoSellingPrice(mrp) {
+            if (mrp <= 500) return 99;
+            if (mrp <= 1000) return 149;
+            if (mrp <= 2000) return 199;
+            return 299;
+        }
+
         // ---- CSV PARSER (quotes-safe) ----
         function parseCSV(text) {
             const rows = [];
@@ -317,12 +410,8 @@
             return rows.filter(r => r.length > 1 || (r.length === 1 && r[0].trim() !== ''));
         }
 
-        // ---- Helper: header naam normalize ----
-        function normalizeKey(k) {
-            return (k || '').trim().toLowerCase().replace(/\s+/g, '').replace(/[_-]/g, '');
-        }
+        function normalizeKey(k) { return (k || '').trim().toLowerCase().replace(/\s+/g, '').replace(/[_-]/g, ''); }
 
-        // ---- Price se number nikaalo (₹, Rs, comma sab hata do) ----
         function parsePrice(str) {
             if (str == null) return 0;
             const cleaned = String(str).replace(/[^\d.]/g, '');
@@ -330,43 +419,26 @@
             return isNaN(n) ? 0 : Math.round(n);
         }
 
-        // ---- Image cell ko array me todo (JSON / pipe / comma / newline) ----
         function parseImages(str) {
             if (!str) return [];
             let s = String(str).trim();
-
             if (s.startsWith('[')) {
-                try {
-                    const arr = JSON.parse(s);
-                    if (Array.isArray(arr)) return arr.map(x => String(x).trim()).filter(Boolean);
-                } catch (e) { /* fallback niche */ }
+                try { const arr = JSON.parse(s); if (Array.isArray(arr)) return arr.map(x => String(x).trim()).filter(Boolean); } catch (e) {}
                 const urls = s.match(/https?:\/\/[^\s"'\],]+/g);
                 if (urls) return urls.map(u => u.trim()).filter(Boolean);
             }
-
             if (s.includes('|')) return s.split('|').map(x => x.trim()).filter(Boolean);
-
             const urls = s.match(/https?:\/\/[^\s"'\],]+/g);
             if (urls && urls.length > 1) return urls.map(u => u.trim()).filter(Boolean);
-
             return s ? [s] : [];
         }
 
-        // ---- CSV -> products (SAB type ki CSV support) ----
+        // ---- CSV -> products (Smart + auto pricing) ----
         function csvToProducts(text) {
             const rows = parseCSV(text);
             if (!rows.length) return [];
-
-            const rawHeader = rows[0];
-            const header = rawHeader.map(normalizeKey);
-
-            const findIdx = (aliases) => {
-                for (const a of aliases) {
-                    const j = header.indexOf(a);
-                    if (j >= 0) return j;
-                }
-                return -1;
-            };
+            const header = rows[0].map(normalizeKey);
+            const findIdx = (aliases) => { for (const a of aliases) { const j = header.indexOf(a); if (j >= 0) return j; } return -1; };
 
             const iTitle    = findIdx(['title', 'productname', 'name', 'product']);
             const iPrice    = findIdx(['price', 'sellingprice', 'sellprice', 'offerprice']);
@@ -381,7 +453,6 @@
                 const r = rows[i];
                 if (!r || !r.length) continue;
                 const get = (j) => (j >= 0 && r[j] != null) ? String(r[j]).trim() : '';
-
                 const title = get(iTitle);
                 if (!title) continue;
 
@@ -389,40 +460,32 @@
                 let homeImage = get(iHome);
                 if (!homeImage && featureImages.length) homeImage = featureImages[0];
                 if (homeImage && !featureImages.length) featureImages = [homeImage];
-
                 const feedbackImages = parseImages(get(iFeedback));
 
-                const price = parsePrice(get(iPrice));
+                // scraped price = MRP maana jayega
+                const scraped = parsePrice(get(iPrice));
+                let originalPrice = parsePrice(get(iOrig)) || scraped;
+                if (!originalPrice) originalPrice = scraped;
 
-                let originalPrice = parsePrice(get(iOrig));
-                if (!originalPrice || originalPrice <= price) {
-                    originalPrice = price > 0 ? Math.round(price * 1.4) : 0;
-                }
+                // Selling price AUTO from rules (MRP/original ke hisaab se)
+                const price = autoSellingPrice(originalPrice || scraped);
 
                 let discount = get(iDiscount);
-                if (!discount && originalPrice > price && originalPrice > 0) {
+                if (originalPrice > price && originalPrice > 0) {
                     const pct = Math.round(((originalPrice - price) / originalPrice) * 100);
                     discount = pct + '% off';
                 }
 
-                products.push({
-                    title,
-                    price,
-                    originalPrice,
-                    discount: discount || '',
-                    homeImage: homeImage || '',
-                    featureImages,
-                    feedbackImages
-                });
+                products.push({ title, price, originalPrice, discount: discount || '', homeImage: homeImage || '', featureImages, feedbackImages });
             }
             return products;
         }
 
-        // ---- Sample CSV download ----
+        // ---- Sample CSV ----
         document.getElementById('download-sample').addEventListener('click', () => {
-            const sample = `title,price,originalPrice,discount,homeImage,featureImages,feedbackImages
-Realme Narzo 60,499,1999,90% off,https://example.com/home1.jpg,https://example.com/f1.jpg|https://example.com/f2.jpg,https://example.com/rev1.jpg
-Samsung Galaxy M14,599,2499,85% off,https://example.com/home2.jpg,https://example.com/g1.jpg|https://example.com/g2.jpg,`;
+            const sample = `Product Name,Price,Image
+MYFITNESS Protein Spread,521,"[""https://example.com/1.jpg"",""https://example.com/2.jpg""]"
+Sample Item 2,1499,"[""https://example.com/3.jpg""]"`;
             const blob = new Blob([sample], { type: 'text/csv' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -430,36 +493,89 @@ Samsung Galaxy M14,599,2499,85% off,https://example.com/home2.jpg,https://exampl
             a.click();
         });
 
+        // ====== MULTIPLE CSV + REMOVABLE PREVIEW ======
         let parsedProducts = [];
         const csvFileInput = document.getElementById('csvFile');
         const csvFileText = document.getElementById('csvFile-text');
         const bulkBtn = document.getElementById('bulk-upload-btn');
+        const previewBox = document.getElementById('csv-preview');
+        const previewBody = document.getElementById('csv-preview-body');
 
-        csvFileInput.addEventListener('change', () => {
-            const file = csvFileInput.files[0];
-            if (!file) return;
-            csvFileText.textContent = file.name + ' ✓';
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    parsedProducts = csvToProducts(e.target.result);
-                    const preview = document.getElementById('csv-preview');
-                    const body = document.getElementById('csv-preview-body');
-                    document.getElementById('csv-count').textContent = parsedProducts.length;
-                    body.innerHTML = parsedProducts.map(p => `
-                        <tr class="border-t border-slate-200">
-                            <td class="p-2 truncate max-w-[160px]">${p.title}</td>
-                            <td class="p-2">₹${p.price}</td>
-                            <td class="p-2">${p.discount}</td>
-                            <td class="p-2">${p.featureImages.length + p.feedbackImages.length}</td>
-                        </tr>`).join('');
-                    preview.classList.remove('hidden');
-                    bulkBtn.disabled = parsedProducts.length === 0;
-                    toast(`${parsedProducts.length} products ready`);
-                } catch (err) { console.error(err); toast('CSV parse failed', false); }
-            };
-            reader.readAsText(file);
+        function renderPreview() {
+            document.getElementById('csv-count').textContent = parsedProducts.length;
+            previewBody.innerHTML = parsedProducts.map((p, idx) => `
+                <tr class="border-t border-slate-200 row-anim">
+                    <td class="p-2"><img src="${p.homeImage}" class="w-10 h-10 object-contain rounded bg-white border" loading="lazy" onerror="this.style.display='none'"></td>
+                    <td class="p-2 truncate max-w-[160px]">${p.title}</td>
+                    <td class="p-2 font-bold text-emerald-600">₹${p.price}</td>
+                    <td class="p-2 line-through text-slate-400">₹${p.originalPrice}</td>
+                    <td class="p-2 text-fuchsia-600">${p.discount}</td>
+                    <td class="p-2 text-center"><button class="rm-x text-red-500 font-bold" data-idx="${idx}">✕</button></td>
+                </tr>`).join('');
+            previewBox.classList.toggle('hidden', parsedProducts.length === 0);
+            bulkBtn.disabled = parsedProducts.length === 0;
+        }
+
+        // remove single product from preview
+        previewBody.addEventListener('click', (e) => {
+            const b = e.target.closest('[data-idx]');
+            if (!b) return;
+            parsedProducts.splice(Number(b.dataset.idx), 1);
+            renderPreview();
         });
+
+        document.getElementById('clear-all-btn').addEventListener('click', () => {
+            parsedProducts = [];
+            csvFileText.textContent = 'Tap to choose up to 10 CSV files';
+            csvFileInput.value = '';
+            renderPreview();
+        });
+
+        // read a file as text (Promise)
+        function readFileText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+
+        csvFileInput.addEventListener('change', async () => {
+            let files = Array.from(csvFileInput.files);
+            if (!files.length) return;
+            if (files.length > 10) {
+                toast('Sirf 10 CSV tak allowed — pehli 10 li gayi', false);
+                files = files.slice(0, 10);
+            }
+            csvFileText.textContent = `${files.length} CSV file(s) reading… ✓`;
+            try {
+                parsedProducts = []; // fresh merge
+                for (const file of files) {
+                    const text = await readFileText(file);
+                    const prods = csvToProducts(text);
+                    parsedProducts.push(...prods);
+                }
+                csvFileText.textContent = `${files.length} CSV merged ✓`;
+                renderPreview();
+                toast(`${parsedProducts.length} products merged from ${files.length} CSV`);
+            } catch (err) { console.error(err); toast('CSV read failed', false); }
+        });
+
+        // ====== EDIT MODAL ======
+        const editModal = document.getElementById('edit-modal');
+        function openEditModal(id, p) {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-title').value = p.title || '';
+            document.getElementById('edit-price').value = p.price ?? '';
+            document.getElementById('edit-original').value = p.originalPrice ?? '';
+            document.getElementById('edit-discount').value = p.discount || '';
+            editModal.classList.remove('hidden');
+            editModal.classList.add('flex');
+        }
+        function closeEditModal() { editModal.classList.add('hidden'); editModal.classList.remove('flex'); }
+        document.getElementById('edit-cancel').addEventListener('click', closeEditModal);
+        editModal.addEventListener('click', (e) => { if (e.target === editModal) closeEditModal(); });
 
         async function init() {
             let cfg;
@@ -473,7 +589,7 @@ Samsung Galaxy M14,599,2499,85% off,https://example.com/home2.jpg,https://exampl
             const db = getFirestore(app);
             const paymentSettingsRef = doc(db, "settings", COLLECTION);
 
-            // ---- Single Add product ----
+            // ---- Single Add ----
             productForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const btn = e.target.querySelector('button[type="submit"]');
@@ -485,7 +601,7 @@ Samsung Galaxy M14,599,2499,85% off,https://example.com/home2.jpg,https://exampl
                         uploadFiles(document.getElementById('feedbackImages').files)
                     ]);
                     btn.textContent = 'Saving…';
-                    const newProduct = {
+                    await addDoc(collection(db, COLLECTION), {
                         title: document.getElementById('title').value,
                         price: Number(document.getElementById('price').value),
                         originalPrice: Number(document.getElementById('originalPrice').value),
@@ -494,22 +610,17 @@ Samsung Galaxy M14,599,2499,85% off,https://example.com/home2.jpg,https://exampl
                         featureImages: featureImageUrls || [],
                         feedbackImages: feedbackImageUrls || [],
                         createdAt: serverTimestamp()
-                    };
-                    await addDoc(collection(db, COLLECTION), newProduct);
+                    });
                     productForm.reset();
                     document.getElementById('homeImage-text').textContent = 'Tap to choose home image';
                     document.getElementById('featureImages-text').textContent = 'Tap to choose multiple images';
                     document.getElementById('feedbackImages-text').textContent = 'Tap to choose multiple images';
                     toast('Product added successfully!');
-                } catch (err) {
-                    console.error(err);
-                    toast('Failed to add product', false);
-                } finally {
-                    btn.textContent = 'Save Product'; btn.disabled = false;
-                }
+                } catch (err) { console.error(err); toast('Failed to add product', false); }
+                finally { btn.textContent = 'Save Product'; btn.disabled = false; }
             });
 
-            // ---- BULK UPLOAD (Live) ----
+            // ---- BULK UPLOAD ----
             const bulkLog = document.getElementById('bulk-log');
             function log(msg, color = 'text-slate-200') {
                 bulkLog.classList.remove('hidden');
@@ -524,57 +635,89 @@ Samsung Galaxy M14,599,2499,85% off,https://example.com/home2.jpg,https://exampl
                 if (!parsedProducts.length) { toast('CSV pehle upload karo', false); return; }
                 bulkBtn.disabled = true;
                 bulkLog.innerHTML = '';
-                log(`🚀 Starting upload of ${parsedProducts.length} products...`, 'text-blue-300');
+                log(`🚀 Uploading ${parsedProducts.length} products...`, 'text-indigo-300');
                 let ok = 0, fail = 0;
                 for (let i = 0; i < parsedProducts.length; i++) {
                     const p = parsedProducts[i];
                     bulkBtn.textContent = `Uploading ${i + 1}/${parsedProducts.length}…`;
                     try {
                         await addDoc(collection(db, COLLECTION), { ...p, createdAt: serverTimestamp() });
-                        ok++;
-                        log(`✓ [${i + 1}] ${p.title}`, 'text-green-400');
-                    } catch (err) {
-                        fail++;
-                        console.error(err);
-                        log(`✗ [${i + 1}] ${p.title} — ${err.message}`, 'text-red-400');
-                    }
+                        ok++; log(`✓ [${i + 1}] ${p.title}`, 'text-green-400');
+                    } catch (err) { fail++; console.error(err); log(`✗ [${i + 1}] ${p.title} — ${err.message}`, 'text-red-400'); }
                 }
-                log(`✅ Done! Success: ${ok}, Failed: ${fail}`, 'text-blue-300');
-                toast(`Uploaded ${ok}/${parsedProducts.length} products live!`);
+                log(`✅ Done! Success: ${ok}, Failed: ${fail}`, 'text-indigo-300');
+                toast(`Uploaded ${ok}/${parsedProducts.length} live!`);
                 bulkBtn.textContent = 'Upload All Products (Live)';
                 bulkBtn.disabled = false;
                 parsedProducts = [];
-                csvFileText.textContent = 'Tap to choose CSV file';
+                csvFileText.textContent = 'Tap to choose up to 10 CSV files';
                 csvFileInput.value = '';
-                document.getElementById('csv-preview').classList.add('hidden');
+                renderPreview();
             });
 
-            // ---- Live product list ----
-            onSnapshot(query(collection(db, COLLECTION)), (snapshot) => {
-                if (snapshot.empty) { productListDiv.innerHTML = '<p class="text-slate-500">No products found. Add one!</p>'; return; }
-                const items = [];
-                snapshot.forEach(d => items.push({ id: d.id, p: d.data() }));
-                items.sort((a, b) => (b.p.createdAt?.seconds || 0) - (a.p.createdAt?.seconds || 0));
+            // ---- Live product list + search + edit ----
+            let allItems = [];
+            const manageSearch = document.getElementById('manage-search');
+
+            function renderList() {
+                const term = (manageSearch.value || '').toLowerCase().trim();
+                const items = term ? allItems.filter(x => (x.p.title || '').toLowerCase().includes(term)) : allItems;
+                if (!items.length) { productListDiv.innerHTML = '<p class="text-slate-500">No products found.</p>'; return; }
                 productListDiv.innerHTML = items.map(({ id, p }) => `
-                    <div class="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <div class="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 row-anim">
                         <div class="flex items-center gap-3 min-w-0">
-                            <img src="${p.homeImage}" class="w-14 h-14 flex-shrink-0 object-contain rounded-lg bg-white p-1 border" loading="lazy">
+                            <img src="${p.homeImage}" class="w-14 h-14 flex-shrink-0 object-contain rounded-lg bg-white p-1 border" loading="lazy" onerror="this.style.opacity=.3">
                             <div class="min-w-0">
                                 <p class="font-semibold text-slate-800 truncate">${p.title}</p>
-                                <p class="text-xs text-slate-500">₹${p.price} <span class="line-through">₹${p.originalPrice}</span> · ${p.discount}</p>
+                                <p class="text-xs text-slate-500">₹${p.price} <span class="line-through">₹${p.originalPrice}</span> · <span class="text-fuchsia-600">${p.discount || ''}</span></p>
                             </div>
                         </div>
-                        <button data-id="${id}" class="delete-btn flex-shrink-0 bg-red-500 text-white text-sm py-2 px-3 rounded-lg hover:bg-red-600 transition">Delete</button>
-                    </div>
-                `).join('');
+                        <div class="flex gap-2 flex-shrink-0">
+                            <button data-edit="${id}" class="bg-indigo-500 text-white text-sm py-2 px-3 rounded-lg hover:bg-indigo-600 transition">Edit</button>
+                            <button data-del="${id}" class="bg-red-500 text-white text-sm py-2 px-3 rounded-lg hover:bg-red-600 transition">Delete</button>
+                        </div>
+                    </div>`).join('');
+            }
+            manageSearch.addEventListener('input', renderList);
+
+            onSnapshot(query(collection(db, COLLECTION)), (snapshot) => {
+                allItems = [];
+                snapshot.forEach(d => allItems.push({ id: d.id, p: d.data() }));
+                allItems.sort((a, b) => (b.p.createdAt?.seconds || 0) - (a.p.createdAt?.seconds || 0));
+                document.getElementById('stat-total').textContent = allItems.length;
+                renderList();
             });
 
             productListDiv.addEventListener('click', async (e) => {
-                const btn = e.target.closest('.delete-btn');
-                if (!btn) return;
-                if (!confirm('Delete this product?')) return;
-                try { await deleteDoc(doc(db, COLLECTION, btn.getAttribute('data-id'))); toast('Product deleted'); }
-                catch (err) { console.error(err); toast('Delete failed', false); }
+                const delBtn = e.target.closest('[data-del]');
+                const editBtn = e.target.closest('[data-edit]');
+                if (delBtn) {
+                    if (!confirm('Delete this product?')) return;
+                    try { await deleteDoc(doc(db, COLLECTION, delBtn.dataset.del)); toast('Product deleted'); }
+                    catch (err) { console.error(err); toast('Delete failed', false); }
+                }
+                if (editBtn) {
+                    const item = allItems.find(x => x.id === editBtn.dataset.edit);
+                    if (item) openEditModal(item.id, item.p);
+                }
+            });
+
+            // save edit
+            document.getElementById('edit-save').addEventListener('click', async () => {
+                const id = document.getElementById('edit-id').value;
+                const saveBtn = document.getElementById('edit-save');
+                saveBtn.textContent = 'Saving…'; saveBtn.disabled = true;
+                try {
+                    await updateDoc(doc(db, COLLECTION, id), {
+                        title: document.getElementById('edit-title').value,
+                        price: Number(document.getElementById('edit-price').value) || 0,
+                        originalPrice: Number(document.getElementById('edit-original').value) || 0,
+                        discount: document.getElementById('edit-discount').value
+                    });
+                    toast('Product updated!');
+                    closeEditModal();
+                } catch (err) { console.error(err); toast('Update failed', false); }
+                finally { saveBtn.textContent = 'Save Changes'; saveBtn.disabled = false; }
             });
 
             // ---- Payment settings ----
@@ -606,4 +749,4 @@ Samsung Galaxy M14,599,2499,85% off,https://example.com/home2.jpg,https://exampl
         init();
     </script>
 </body>
-    </html>
+</html>

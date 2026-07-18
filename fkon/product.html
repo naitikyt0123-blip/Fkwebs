@@ -104,17 +104,24 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getAuth } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp, collection, getDocs, query, limit } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, getDocs, query, limit } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        // NOTE: Ab config firesdk.php se load hota hai (hardcoded config hata diya gaya)
-        let app, auth, db, dynamicCollection;
+        // Config firesdk.php se load hota hai
+        let app, db, dynamicCollection;
 
         const mainContent = document.getElementById('main-content');
         const skeletonLoader = document.getElementById('skeleton-loader');
         const productContainer = document.getElementById('product-details-container');
         const urlParams = new URLSearchParams(window.location.search);
         const productId = urlParams.get('id');
+
+        // ===== LocalStorage Cart Helpers (No Login) =====
+        const CART_KEY = 'fk_cart';
+        function getCart() {
+            try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; }
+            catch (e) { return []; }
+        }
+        function saveCart(items) { localStorage.setItem(CART_KEY, JSON.stringify(items)); }
 
         // Fetch config from firesdk.php
         async function getConfig() {
@@ -142,7 +149,6 @@
 
                     const sliderWrapper = document.getElementById('slider-wrapper');
                     sliderWrapper.innerHTML = '';
-                    // featureImages ya fallback homeImage
                     const images = (product.featureImages && product.featureImages.length > 0)
                         ? product.featureImages
                         : (product.homeImage ? [product.homeImage] : []);
@@ -164,7 +170,6 @@
                     skeletonLoader.classList.add('hidden');
                     productContainer.classList.add('visible');
 
-                    // Related products load karo
                     loadRelatedProducts(id);
 
                 } else {
@@ -187,7 +192,6 @@
                 let html = '';
                 let count = 0;
                 snap.forEach(docItem => {
-                    // Current product ko chhod do
                     if (docItem.id === currentId) return;
                     const p = docItem.data();
                     const img = p.homeImage || (p.featureImages && p.featureImages[0]) || '';
@@ -234,41 +238,34 @@
             });
         }
 
+        // ===== Buttons (No Login — localStorage cart) =====
         function setupButtons() {
             const buyNowBtn = document.getElementById('buy-now-btn');
             const addToCartBtn = document.getElementById('add-to-cart-btn');
 
+            // BUY NOW — seedha address page
             buyNowBtn.addEventListener('click', () => {
-                const user = auth.currentUser;
-                if (!user) { window.location.href = `login.html`; return; }
                 sessionStorage.setItem('productId', productId);
                 window.location.href = 'address.html';
             });
 
+            // ADD TO CART — localStorage
             addToCartBtn.addEventListener('click', () => {
-                const user = auth.currentUser;
-                if (!user) { window.location.href = `login.html`; return; }
                 addToCartBtn.textContent = 'Adding...'; addToCartBtn.disabled = true;
-                const cartRef = doc(db, "carts", user.uid);
-                getDoc(cartRef).then(docSnap => {
-                    const items = docSnap.exists() ? docSnap.data().items || [] : [];
-                    const existingItem = items.find(item => item.productId === productId);
-                    if (existingItem) {
-                        existingItem.quantity += 1;
-                        return updateDoc(cartRef, { items: items });
-                    } else {
-                        const newItem = { productId: productId, quantity: 1 };
-                        return docSnap.exists() ? updateDoc(cartRef, { items: arrayUnion(newItem) }) : setDoc(cartRef, { userId: user.uid, items: [newItem], createdAt: serverTimestamp() });
-                    }
-                }).then(() => {
+                try {
+                    const items = getCart();
+                    const existing = items.find(i => i.productId === productId);
+                    if (existing) existing.quantity += 1;
+                    else items.push({ productId: productId, quantity: 1 });
+                    saveCart(items);
                     alert('Product added to your cart!');
-                }).catch(error => {
-                    console.error("Error adding to cart: ", error);
+                } catch (err) {
+                    console.error("Error adding to cart:", err);
                     alert('Failed to add product to cart.');
-                }).finally(() => {
+                } finally {
                     addToCartBtn.textContent = 'Add to Cart';
                     addToCartBtn.disabled = false;
-                });
+                }
             });
         }
 
@@ -277,7 +274,6 @@
             try {
                 const cfg = await getConfig();
                 app = initializeApp(cfg.firebase);
-                auth = getAuth(app);
                 db = getFirestore(app);
                 dynamicCollection = cfg.collection;
 

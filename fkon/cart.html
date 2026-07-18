@@ -19,9 +19,7 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        .quantity-btn:hover {
-            background-color: #f3f4f6;
-        }
+        .quantity-btn:hover { background-color: #f3f4f6; }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -37,12 +35,6 @@
     </header>
 
     <main class="container mx-auto p-2 lg:p-4 pb-16">
-        <!-- Login Prompt -->
-        <div id="login-prompt" class="hidden text-center bg-white p-8 rounded-lg shadow-md mt-4">
-            <h2 class="text-xl font-bold mb-4">Please log in to see your cart</h2>
-            <a href="login.html" class="inline-block bg-orange-500 text-white font-bold py-3 px-8 rounded-md hover:bg-orange-600 transition-colors">Login Now</a>
-        </div>
-        
         <!-- Empty Cart View -->
         <div id="empty-cart" class="hidden text-center bg-white p-8 rounded-lg shadow-md mt-4">
             <img src="https://rukminim1.flixcart.com/www/800/800/promos/16/05/2019/d438a32e-765a-4d8b-b4a6-520b560971e8.png?q=90" alt="Empty Cart" class="w-48 mx-auto mb-4">
@@ -91,13 +83,21 @@
         </div>
     </main>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK (sirf products fetch ke liye, koi login nahi) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        // Fetch config from firesdk.php
+        // ===== LocalStorage Cart Helpers (No Login) =====
+        const CART_KEY = 'fk_cart';
+        function getCart() {
+            try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; }
+            catch (e) { return []; }
+        }
+        function saveCart(items) {
+            localStorage.setItem(CART_KEY, JSON.stringify(items));
+        }
+
         async function getConfig() {
             const cached = sessionStorage.getItem('fk_config');
             if (cached) return JSON.parse(cached);
@@ -112,136 +112,116 @@
             try {
                 const cfg = await getConfig();
                 const app = initializeApp(cfg.firebase);
-                const auth = getAuth(app);
                 const db = getFirestore(app);
-                
-                // Dynamic collection name products fetch karne ke liye
-                const dynamicCollection = cfg.collection; 
+                const dynamicCollection = cfg.collection;
 
-                const loginPrompt = document.getElementById('login-prompt');
                 const emptyCartView = document.getElementById('empty-cart');
                 const cartView = document.getElementById('cart-view');
                 const cartItemsContainer = document.getElementById('cart-items-container');
 
-                onAuthStateChanged(auth, user => {
-                    if (user) {
-                        loginPrompt.classList.add('hidden');
-                        loadCart(user.uid);
-                    } else {
+                async function renderCart() {
+                    const cartItems = getCart();
+
+                    if (!cartItems.length) {
                         cartView.classList.add('hidden');
-                        emptyCartView.classList.add('hidden');
-                        loginPrompt.classList.remove('hidden');
+                        emptyCartView.classList.remove('hidden');
+                        return;
                     }
-                });
 
-                function loadCart(userId) {
-                    const cartRef = doc(db, "carts", userId); // Cart users ke hisab se save hota hai
-                    
-                    onSnapshot(cartRef, async (cartSnap) => {
-                        if (!cartSnap.exists() || cartSnap.data().items.length === 0) {
-                            cartView.classList.add('hidden');
-                            emptyCartView.classList.remove('hidden');
-                            return;
-                        }
+                    cartView.classList.remove('hidden');
+                    emptyCartView.classList.add('hidden');
+                    cartItemsContainer.innerHTML = '<div class="p-8 text-center text-gray-500"><div class="animate-pulse">Loading cart items...</div></div>';
 
-                        cartView.classList.remove('hidden');
-                        emptyCartView.classList.add('hidden');
-                        
-                        const cartItems = cartSnap.data().items;
-                        cartItemsContainer.innerHTML = '<div class="p-8 text-center text-gray-500"><div class="animate-pulse">Loading cart items...</div></div>';
+                    let fetchedItemsHTML = '';
+                    let totalMRP = 0, totalAmount = 0, totalItems = 0;
+                    let validItems = [];
 
-                        let fetchedItemsHTML = '';
-                        let totalMRP = 0;
-                        let totalAmount = 0;
-                        let totalItems = 0;
+                    for (const item of cartItems) {
+                        const productRef = doc(db, dynamicCollection, item.productId);
+                        const productSnap = await getDoc(productRef);
 
-                        for (const item of cartItems) {
-                            // Fetch product from the dynamic collection
-                            const productRef = doc(db, dynamicCollection, item.productId);
-                            const productSnap = await getDoc(productRef);
-                            
-                            if (productSnap.exists()) {
-                                const product = productSnap.data();
-                                totalMRP += product.originalPrice * item.quantity;
-                                totalAmount += product.price * item.quantity;
-                                totalItems += item.quantity;
+                        if (productSnap.exists()) {
+                            const product = productSnap.data();
+                            const price = Number(product.price) || 0;
+                            const original = Number(product.originalPrice) || price;
+                            totalMRP += original * item.quantity;
+                            totalAmount += price * item.quantity;
+                            totalItems += item.quantity;
+                            validItems.push(item); // product exist karta hai
 
-                                fetchedItemsHTML += `
-                                    <div class="p-4 border-b flex flex-col sm:flex-row gap-4 hover:bg-gray-50 transition-colors">
-                                        <div class="flex-shrink-0 flex justify-center">
-                                            <a href="product.html?id=${item.productId}">
-                                                <img src="${product.homeImage}" class="w-24 h-24 object-contain mix-blend-multiply">
-                                            </a>
+                            fetchedItemsHTML += `
+                                <div class="p-4 border-b flex flex-col sm:flex-row gap-4 hover:bg-gray-50 transition-colors">
+                                    <div class="flex-shrink-0 flex justify-center">
+                                        <a href="product.html?id=${item.productId}">
+                                            <img src="${product.homeImage || ''}" class="w-24 h-24 object-contain mix-blend-multiply">
+                                        </a>
+                                    </div>
+                                    <div class="flex-grow">
+                                        <a href="product.html?id=${item.productId}" class="font-semibold text-sm text-gray-800 hover:text-blue-600 line-clamp-2">${product.title || ''}</a>
+                                        <div class="flex items-center gap-2 mt-2">
+                                            <p class="font-bold text-gray-900">₹${price}</p>
+                                            <p class="text-gray-500 line-through text-xs">₹${original}</p>
+                                            <p class="text-green-600 font-semibold text-xs">${product.discount || ''}</p>
                                         </div>
-                                        <div class="flex-grow">
-                                            <a href="product.html?id=${item.productId}" class="font-semibold text-sm text-gray-800 hover:text-blue-600 line-clamp-2">${product.title}</a>
-                                            <div class="flex items-center gap-2 mt-2">
-                                                <p class="font-bold text-gray-900">₹${product.price}</p>
-                                                <p class="text-gray-500 line-through text-xs">₹${product.originalPrice}</p>
-                                                <p class="text-green-600 font-semibold text-xs">${product.discount}</p>
+                                        <div class="flex items-center gap-4 mt-4">
+                                            <div class="flex items-center gap-3">
+                                                <button data-action="decrease" data-id="${item.productId}" class="quantity-btn">-</button>
+                                                <span class="border px-4 py-1 bg-white">${item.quantity}</span>
+                                                <button data-action="increase" data-id="${item.productId}" class="quantity-btn">+</button>
                                             </div>
-                                            <div class="flex items-center gap-4 mt-4">
-                                                <div class="flex items-center gap-3">
-                                                    <button data-action="decrease" data-id="${item.productId}" class="quantity-btn">-</button>
-                                                    <span class="border px-4 py-1 bg-white">${item.quantity}</span>
-                                                    <button data-action="increase" data-id="${item.productId}" class="quantity-btn">+</button>
-                                                </div>
-                                                <button data-action="remove" data-id="${item.productId}" class="font-bold text-sm text-gray-700 hover:text-red-500 transition-colors">REMOVE</button>
-                                            </div>
+                                            <button data-action="remove" data-id="${item.productId}" class="font-bold text-sm text-gray-700 hover:text-red-500 transition-colors">REMOVE</button>
                                         </div>
                                     </div>
-                                `;
-                            }
+                                </div>
+                            `;
                         }
-                        
-                        cartItemsContainer.innerHTML = fetchedItemsHTML;
-                        
-                        // Update price details
-                        document.getElementById('total-items').textContent = totalItems;
-                        document.getElementById('total-mrp').textContent = `₹${totalMRP.toLocaleString('en-IN')}`;
-                        document.getElementById('total-amount').textContent = `₹${totalAmount.toLocaleString('en-IN')}`;
-                        const discount = totalMRP - totalAmount;
-                        document.getElementById('total-discount').textContent = `- ₹${discount.toLocaleString('en-IN')}`;
-                        document.getElementById('savings-message').textContent = `You will save ₹${discount.toLocaleString('en-IN')} on this order`;
-                    });
-                }
-                
-                // Handle cart actions (remove, increase, decrease)
-                cartItemsContainer.addEventListener('click', async (e) => {
-                    const action = e.target.getAttribute('data-action');
-                    const productId = e.target.getAttribute('data-id');
-                    const user = auth.currentUser;
+                    }
 
-                    if (!action || !productId || !user) return;
-                    
-                    // Add slight visual feedback during processing
-                    e.target.style.opacity = '0.5';
-                    
-                    const cartRef = doc(db, "carts", user.uid);
-                    const cartSnap = await getDoc(cartRef);
-                    let cartItems = cartSnap.data().items;
+                    // Agar koi product delete ho gaya ho to cart clean kar do
+                    if (validItems.length !== cartItems.length) saveCart(validItems);
+
+                    if (!validItems.length) {
+                        cartView.classList.add('hidden');
+                        emptyCartView.classList.remove('hidden');
+                        return;
+                    }
+
+                    cartItemsContainer.innerHTML = fetchedItemsHTML;
+
+                    document.getElementById('total-items').textContent = totalItems;
+                    document.getElementById('total-mrp').textContent = `₹${totalMRP.toLocaleString('en-IN')}`;
+                    document.getElementById('total-amount').textContent = `₹${totalAmount.toLocaleString('en-IN')}`;
+                    const discount = totalMRP - totalAmount;
+                    document.getElementById('total-discount').textContent = `- ₹${discount.toLocaleString('en-IN')}`;
+                    document.getElementById('savings-message').textContent = `You will save ₹${discount.toLocaleString('en-IN')} on this order`;
+                }
+
+                // Cart actions (remove / increase / decrease)
+                cartItemsContainer.addEventListener('click', async (e) => {
+                    const btn = e.target.closest('[data-action]');
+                    if (!btn) return;
+                    const action = btn.getAttribute('data-action');
+                    const productId = btn.getAttribute('data-id');
+                    if (!action || !productId) return;
+
+                    let cartItems = getCart();
                     const itemInCart = cartItems.find(i => i.productId === productId);
+                    if (!itemInCart && action !== 'remove') return;
 
                     if (action === 'remove') {
-                        const updatedItems = cartItems.filter(i => i.productId !== productId);
-                        await updateDoc(cartRef, { items: updatedItems });
+                        cartItems = cartItems.filter(i => i.productId !== productId);
+                    } else if (action === 'increase') {
+                        itemInCart.quantity += 1;
+                    } else if (action === 'decrease') {
+                        if (itemInCart.quantity > 1) itemInCart.quantity -= 1;
+                        else cartItems = cartItems.filter(i => i.productId !== productId);
                     }
 
-                    if (action === 'increase') {
-                        itemInCart.quantity += 1;
-                        await updateDoc(cartRef, { items: cartItems });
-                    }
-                    
-                    if (action === 'decrease') {
-                         if (itemInCart.quantity > 1) {
-                            itemInCart.quantity -= 1;
-                            await updateDoc(cartRef, { items: cartItems });
-                         } else {
-                            const updatedItems = cartItems.filter(i => i.productId !== productId);
-                            await updateDoc(cartRef, { items: updatedItems });
-                         }
-                    }
+                    saveCart(cartItems);
+                    renderCart();
                 });
+
+                renderCart();
 
             } catch (err) {
                 console.error("Cart Initialization failed:", err);
@@ -249,9 +229,7 @@
             }
         }
 
-        // Initialize script
         initCart();
-
     </script>
 </body>
 </html>
